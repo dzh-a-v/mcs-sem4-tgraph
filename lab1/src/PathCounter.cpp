@@ -3,12 +3,16 @@
 
 namespace graph {
 
+// Constructs a PathCounter for the given graph
 PathCounter::PathCounter(Graph const& graph) : m_graph_(graph) {}
 
+// Returns the total number of simple paths from 'from' to 'to'
 int PathCounter::getPathCount(int from, int to) {
     return static_cast<int>(getAllPaths(from, to).size());
 }
 
+// Finds all simple paths between two vertices using backtracking.
+// Returns empty matrix if either vertex doesn't exist.
 PathMatrix PathCounter::getAllPaths(int from, int to) {
     if (!m_graph_.hasVertex(from) || !m_graph_.hasVertex(to)) return {};
     PathMatrix all_paths;
@@ -23,6 +27,9 @@ PathMatrix PathCounter::getAllPaths(int from, int to) {
     return all_paths;
 }
 
+// Recursive backtracking to enumerate all simple paths.
+// Marks vertices as visited to avoid cycles, then unmarks on backtrack
+// to allow exploring alternative paths through the same vertex.
 void PathCounter::backtrackAllPaths(int current, int target, std::vector<bool>& visited,
                           std::vector<int>& currentPath, PathMatrix& allPaths) {
     currentPath.push_back(current);
@@ -38,6 +45,7 @@ void PathCounter::backtrackAllPaths(int current, int target, std::vector<bool>& 
         }
     }
 
+    // Backtrack: unmark vertex and remove from path
     currentPath.pop_back();
     visited[current] = false;
 }
