@@ -6,15 +6,12 @@
 
 using namespace graph;
 
-/// Reads an integer value from standard input with a prompt message.
 int readInt(const std::string& prompt) {
     std::cout << prompt;
     int val; std::cin >> val;
     return val;
 }
 
-/// Prints a distance matrix with vertex labels.
-/// Displays nullopt values as "inf" representing unreachable pairs.
 void printMatrix(const std::string& title, const DistanceMatrix& mat, const std::vector<int>& ids) {
     std::cout << "\n=== " << title << " ===\n";
     std::cout << "   ";
@@ -30,12 +27,9 @@ void printMatrix(const std::string& title, const DistanceMatrix& mat, const std:
     }
 }
 
-/// Main entry point demonstrating graph generation, Shimbell's method,
-/// and path counting algorithms.
 int main() {
     std::cout << "Laboratory Work #1\n";
 
-    // 1. Graph generation
     int vertices = readInt("Number of vertices: ");
     int edges = readInt("Number of edges: ");
     bool directed = readInt("Directed? (1 - yes, 0 - no): ") == 1;
@@ -46,7 +40,6 @@ int main() {
 
     std::cout << "[OK] Graph generated (V=" << vertices << ", E=" << edges << ")\n";
 
-    // 2. Shimbell method - find min/max paths of exactly k edges
     int pathLen = readInt("Path length for Shimbell (k): ");
     ShimbellMethod shimbell(*graph);
     auto result = shimbell.compute(pathLen);
@@ -55,7 +48,6 @@ int main() {
     printMatrix("Minimum paths (Shimbell)", result.min_distances, ids);
     printMatrix("Maximum paths (Shimbell)", result.max_distances, ids);
 
-    // 3. Path counting - enumerate all simple paths between two vertices
     int from = readInt("Start vertex: ");
     int to = readInt("End vertex: ");
 
