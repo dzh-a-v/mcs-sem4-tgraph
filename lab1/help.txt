@@ -113,3 +113,45 @@
  * Space Complexity: O(|V|²)
  * =============================================================================
  */
+
+
+
+
+
+ /*
+ * =============================================================================
+ * SIMPLE PATH ENUMERATION
+ * =============================================================================
+ * 
+ * Finds ALL simple paths (no repeated vertices) between two vertices.
+ * 
+ * Algorithm: Depth-first search with backtracking
+ *   1. Start at source vertex
+ *   2. Mark as visited, add to current path
+ *   3. If at destination: save path
+ *   4. Otherwise: recurse on unvisited neighbors
+ *   5. Backtrack: unmark, remove from path
+ * 
+ * Complexity: O(V! / (V-k)!) worst case
+ * =============================================================================
+ */
+
+
+
+
+
+ /*
+ * =============================================================================
+ * GRAPH DATA STRUCTURE
+ * =============================================================================
+ * 
+ * Represents a weighted graph G = (V, E) using adjacency list.
+ * Supports both directed and undirected graphs.
+ * 
+ * Key Concepts:
+ *   - Simple path: no repeated vertices
+ *   - Cycle: path starting and ending at same vertex
+ *   - Acyclic: no cycles present
+ *   - Connected: path exists between any two vertices
+ * =============================================================================
+ */

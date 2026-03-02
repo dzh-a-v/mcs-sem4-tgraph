@@ -5,7 +5,7 @@ SimplePathFinder::SimplePathFinder(AdjacencyGraph const& graph)
     : m_graph(graph) 
 {}
 
-int SimplePathFinder::countPaths(int from, int to) {
+int SimplePathFinder::countPaths(int from, int to) { // kostyl' :P
     PathCollection paths = findAllPaths(from, to);
     return static_cast<int>(paths.size());
 }
@@ -20,12 +20,12 @@ PathCollection SimplePathFinder::findAllPaths(int from, int to) {
     std::vector<int> currentPath;
     std::vector<bool> visited(m_graph.size(), false);
     
-    // Map vertex IDs to indices for visited array
+    // MBuild vcertex ID → index mapping 
     auto vertexList = m_graph.vertexIds();
     std::unordered_map<int, int> idToIndex;
     for (int i = 0; i < static_cast<int>(vertexList.size()); ++i) {
-        idToIndex[vertexList[i]] = i;
-    }
+        idToIndex[vertexList[i]] = i; // it's for the future
+    } // when IDs may not be like "|N"
     
     dfsExplore(from, to, visited, currentPath, collectedPaths);
     return collectedPaths;
