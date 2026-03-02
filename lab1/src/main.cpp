@@ -72,15 +72,19 @@ void printMatrix(const std::string& title, const DistanceMatrix& mat, const std:
 void printDistributionComparison() {
     std::cout << "\n=== Binomial Distribution Characteristics ===\n";
     
-    auto theoretical = Generator::getTheoreticalCharacteristics(BINOMIAL_N, BINOMIAL_P);
+    auto theoretical = Generator::getTheoreticalCharacteristics(BINOMIAL_N_DEGREE, BINOMIAL_P_DEGREE);
     
-    std::cout << "Theoretical (B(" << BINOMIAL_N << ", " << BINOMIAL_P << ")):\n";
+    std::cout << "Theoretical for degrees B(" << BINOMIAL_N_DEGREE << ", " << BINOMIAL_P_DEGREE << "):\n";
     std::cout << "  Mean:     " << theoretical.mean << "\n";
     std::cout << "  Variance: " << theoretical.variance << "\n";
     std::cout << "  Std Dev:  " << theoretical.stdDev << "\n";
     std::cout << "  Mode:     " << theoretical.mode << "\n";
     std::cout << "  Skewness: " << theoretical.skewness << "\n";
     std::cout << "  Kurtosis: " << theoretical.kurtosis << "\n";
+    
+    std::cout << "\nTheoretical for weights B(" << BINOMIAL_N_WEIGHT << ", " << BINOMIAL_P_WEIGHT << "):\n";
+    std::cout << "  Mean:     " << BINOMIAL_N_WEIGHT * BINOMIAL_P_WEIGHT << "\n";
+    std::cout << "  Variance: " << BINOMIAL_N_WEIGHT * BINOMIAL_P_WEIGHT * (1.0 - BINOMIAL_P_WEIGHT) << "\n";
 }
 
 void printGraphStatistics(const std::unique_ptr<Graph>& graph) {
@@ -102,7 +106,7 @@ void printGraphStatistics(const std::unique_ptr<Graph>& graph) {
     std::cout << "Max degree:   " << stats.maxDegree << "\n";
     
     // Compare with theoretical
-    auto theoretical = Generator::getTheoreticalCharacteristics(BINOMIAL_N, BINOMIAL_P);
+    auto theoretical = Generator::getTheoreticalCharacteristics(BINOMIAL_N_DEGREE, BINOMIAL_P_DEGREE);
     std::cout << "\n--- Comparison with Theoretical ---\n";
     std::cout << "Mean error:   " << std::abs(stats.meanDegree - theoretical.mean) << "\n";
     std::cout << "Var error:    " << std::abs(stats.variance - theoretical.variance) << "\n";
@@ -155,6 +159,8 @@ int main() {
                 graph = gen.generateAcyclicGraph(vertices, edges, directed, weightType);
                 
                 std::cout << "[OK] Graph generated (V=" << vertices << ", E=" << graph->edges().size() << ")\n";
+                std::cout << "    Degree params: n=" << BINOMIAL_N_DEGREE << ", p=" << BINOMIAL_P_DEGREE << "\n";
+                std::cout << "    Weight params: n=" << BINOMIAL_N_WEIGHT << ", p=" << BINOMIAL_P_WEIGHT << "\n";
                 
                 // Show distribution comparison
                 printDistributionComparison();

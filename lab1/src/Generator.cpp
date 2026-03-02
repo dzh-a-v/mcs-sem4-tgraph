@@ -101,22 +101,21 @@ int Generator::generateBinomial(int n, double p) {
 }
 
 double Generator::generateWeight(WeightType weightType) {
-    // Rayleigh distribution using inverse transform method
-    std::uniform_real_distribution<double> dist(0.0, 1.0);
-    double scale = 1.0;
-    double weight = scale * std::sqrt(-2.0 * std::log(1.0 - dist(m_rng)));
+    // Generate weight using binomial distribution (Algorithm 1)
+    // Add 1 to avoid zero weights (binomial can return 0)
+    int weight = generateBinomial(BINOMIAL_N_WEIGHT, BINOMIAL_P_WEIGHT) + 1;
     
     switch (weightType) {
         case WeightType::Positive:
-            return weight;
+            return static_cast<double>(weight);
         case WeightType::Negative:
-            return -weight;
+            return -static_cast<double>(weight);
         case WeightType::Mixed: {
             std::uniform_int_distribution<int> sign(0, 1);
-            return sign(m_rng) ? weight : -weight;
+            return sign(m_rng) ? static_cast<double>(weight) : -static_cast<double>(weight);
         }
     }
-    return weight;
+    return static_cast<double>(weight);
 }
 
 std::unique_ptr<Graph> Generator::generateAcyclicGraph(int vertices, int edges, bool directed, WeightType weightType) {
@@ -132,7 +131,7 @@ std::unique_ptr<Graph> Generator::generateAcyclicGraph(int vertices, int edges, 
     int totalDegree = 0;
     for (int i = 0; i < vertices; ++i) {
         // Limit degree to avoid impossible situations
-        targetDegrees[i] = std::min(generateBinomial(BINOMIAL_N, BINOMIAL_P), vertices - 1);
+        targetDegrees[i] = std::min(generateBinomial(BINOMIAL_N_DEGREE, BINOMIAL_P_DEGREE), vertices - 1);
         totalDegree += targetDegrees[i];
     }
     
@@ -182,7 +181,7 @@ std::unique_ptr<Graph> Generator::generateAcyclicGraph(int vertices, int edges, 
             continue;
         }
         
-        // Add edge
+        // Add edge with binomial-distributed weight
         graph->addEdge(u, v, generateWeight(weightType));
         existingEdges.insert({u, v});
         currentDegree[u]++;

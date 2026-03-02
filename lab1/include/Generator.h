@@ -10,7 +10,8 @@ namespace graph {
  * =============================================================================
  * 
  * Generates random acyclic graphs with weighted edges.
- * Vertex degrees follow binomial distribution B(n, p).
+ * - Vertex degrees follow binomial distribution B(n, p)
+ * - Edge weights also follow binomial distribution (shifted to avoid zero)
  * 
  * =============================================================================
  * BINOMIAL DISTRIBUTION (Algorithm 1 - Vadzinsky, Section 6.1)
@@ -32,8 +33,10 @@ namespace graph {
  * where p(0) = q^n
  * 
  * Distribution parameters (constants):
- *   BINOMIAL_N - number of trials
- *   BINOMIAL_P - success probability
+ *   BINOMIAL_N_DEGREE - number of trials for vertex degrees
+ *   BINOMIAL_P_DEGREE - success probability for vertex degrees
+ *   BINOMIAL_N_WEIGHT - number of trials for edge weights
+ *   BINOMIAL_P_WEIGHT - success probability for edge weights
  * 
  * =============================================================================
  * ACYCLICITY GUARANTEE
@@ -49,19 +52,23 @@ namespace graph {
  *   - Prevents duplicate edges between same vertex pair
  * 
  * =============================================================================
- * WEIGHT DISTRIBUTIONS
+ * WEIGHT TYPES
  * =============================================================================
  * 
  * Edge weights can be:
- *   - Positive only (Rayleigh distribution)
- *   - Negative only (-Rayleigh)
- *   - Mixed (signed Rayleigh)
+ *   - Positive only: use binomial directly (values 1 to n)
+ *   - Negative only: negate binomial (values -n to -1)
+ *   - Mixed: randomly positive or negative binomial
  * =============================================================================
  */
 
-// Binomial distribution parameters (constants)
-constexpr int BINOMIAL_N = 10;       // Number of trials
-constexpr double BINOMIAL_P = 0.3;   // Success probability
+// Binomial distribution parameters for vertex degrees
+constexpr int BINOMIAL_N_DEGREE = 10;    // Number of trials for degrees
+constexpr double BINOMIAL_P_DEGREE = 0.3; // Success probability for degrees
+
+// Binomial distribution parameters for edge weights
+constexpr int BINOMIAL_N_WEIGHT = 10;    // Number of trials for weights
+constexpr double BINOMIAL_P_WEIGHT = 0.5; // Success probability for weights
 
 /// Theoretical characteristics of binomial distribution B(n, p)
 struct BinomialCharacteristics {
@@ -89,25 +96,26 @@ enum class WeightType {
 };
 
 /// Generates random acyclic graphs with weighted edges.
-/// Vertex degrees follow binomial distribution B(BINOMIAL_N, BINOMIAL_P).
+/// Vertex degrees follow binomial distribution B(BINOMIAL_N_DEGREE, BINOMIAL_P_DEGREE).
+/// Edge weights follow binomial distribution B(BINOMIAL_N_WEIGHT, BINOMIAL_P_WEIGHT).
 class Generator {
 public:
-    std::unique_ptr<Graph> generateAcyclicGraph(int vertices, int edges, 
+    std::unique_ptr<Graph> generateAcyclicGraph(int vertices, int edges,
         bool directed, WeightType weightType = WeightType::Positive);
-    
+
     /// Computes theoretical characteristics of binomial distribution
     static BinomialCharacteristics getTheoreticalCharacteristics(int n, double p);
-    
+
     /// Computes actual degree statistics from generated graph
     static GraphDegreeStatistics computeGraphStatistics(const Graph& graph);
-    
+
 private:
     std::mt19937 m_rng{std::random_device{}()};
-    
+
     /// Generates binomial random number using Algorithm 1 (Vadzinsky)
     int generateBinomial(int n, double p);
-    
-    /// Generates edge weight based on weight type
+
+    /// Generates edge weight based on weight type using binomial distribution
     double generateWeight(WeightType weightType);
 };
 }
