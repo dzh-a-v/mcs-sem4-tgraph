@@ -41,7 +41,7 @@ struct Edge {
 };
 
 /// Graph class supporting both directed and undirected weighted graphs.
-/// Uses adjacency list representation for efficient neighbor lookups.
+/// Contains adjacency list.
 class Graph {
 public:
     explicit Graph(bool directed = true);
@@ -59,5 +59,6 @@ private:
     bool m_directed;
     std::vector<int> m_vertices;
     std::unordered_map<int, std::vector<std::pair<int, double>>> m_adj;
+    //  {        vertex_id:  {            neighbor_id: weight}        } 
 };
 }
