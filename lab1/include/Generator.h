@@ -4,64 +4,6 @@
 
 namespace graph {
 
-/*
- * =============================================================================
- * RANDOM ACYCLIC GRAPH GENERATOR
- * =============================================================================
- * 
- * Generates random acyclic graphs with weighted edges.
- * - Vertex degrees follow binomial distribution B(n, p)
- * - Edge weights also follow binomial distribution (shifted to avoid zero)
- * 
- * =============================================================================
- * BINOMIAL DISTRIBUTION (Algorithm 1 - Vadzinsky, Section 6.1)
- * =============================================================================
- * 
- * Inverse transform method for discrete random variables:
- * 
- *   1. Initialize: q = 1-p, c = p/q, p(0) = q^n
- *   2. Generate r ~ Uniform(0,1)
- *   3. Set x = 0
- *   4. r = r - p(x)
- *   5. If r < 0: return x
- *   6. x = x + 1
- *   7. p(x) = p(x-1) * c * (n+1-x) / x   [recurrence formula]
- *   8. Go to step 4
- * 
- * Recurrence relation (Section 8.1):
- *   p(x) = p(x-1) × (p/q) × (n+1-x)/x
- * where p(0) = q^n
- * 
- * Distribution parameters (constants):
- *   BINOMIAL_N_DEGREE - number of trials for vertex degrees
- *   BINOMIAL_P_DEGREE - success probability for vertex degrees
- *   BINOMIAL_N_WEIGHT - number of trials for edge weights
- *   BINOMIAL_P_WEIGHT - success probability for edge weights
- * 
- * =============================================================================
- * ACYCLICITY GUARANTEE
- * =============================================================================
- * 
- * For directed graphs, acyclicity is guaranteed by construction:
- *   - Only edges (u, v) where u < v are allowed
- *   - This creates a topological ordering: 0 → 1 → 2 → ... → n-1
- *   - No back-edges exist, therefore no cycles possible
- * 
- * For undirected graphs:
- *   - Edges are normalized so u < v (canonical representation)
- *   - Prevents duplicate edges between same vertex pair
- * 
- * =============================================================================
- * WEIGHT TYPES
- * =============================================================================
- * 
- * Edge weights can be:
- *   - Positive only: use binomial directly (values 1 to n)
- *   - Negative only: negate binomial (values -n to -1)
- *   - Mixed: randomly positive or negative binomial
- * =============================================================================
- */
-
 // Binomial distribution parameters for vertex degrees
 constexpr int BINOMIAL_N_DEGREE = 10;    // Number of trials for degrees
 constexpr double BINOMIAL_P_DEGREE = 0.3; // Success probability for degrees
