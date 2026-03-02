@@ -92,7 +92,8 @@ enum class WeightType {
 /// Vertex degrees follow binomial distribution B(BINOMIAL_N, BINOMIAL_P).
 class Generator {
 public:
-    std::unique_ptr<Graph> generateAcyclicGraph(int vertices, int edges, bool directed, WeightType weightType = WeightType::Positive);
+    std::unique_ptr<Graph> generateAcyclicGraph(int vertices, int edges, 
+        bool directed, WeightType weightType = WeightType::Positive);
     
     /// Computes theoretical characteristics of binomial distribution
     static BinomialCharacteristics getTheoreticalCharacteristics(int n, double p);

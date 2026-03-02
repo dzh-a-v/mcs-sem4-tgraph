@@ -21,8 +21,8 @@ namespace graph {
  *   - Diametrical vertices: vertices with eccentricity = diameter
  * 
  * Algorithm:
- *   - Uses BFS/Dijkstra for shortest paths from each vertex
- *   - Time Complexity: O(V * (V + E) * log V) with Dijkstra
+ *   - Uses Bellman-Ford for shortest paths (supports negative weights)
+ *   - Time Complexity: O(V^2 × E) - runs Bellman-Ford from each vertex
  *   - Space Complexity: O(V^2) for distance matrix
  * =============================================================================
  */

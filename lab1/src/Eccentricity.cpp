@@ -1,5 +1,4 @@
 #include "include/Eccentricity.h"
-#include <queue>
 #include <limits>
 #include <algorithm>
 
@@ -8,34 +7,39 @@ namespace graph {
 EccentricityCalculator::EccentricityCalculator(const Graph& graph)
     : m_graph_(graph) {}
 
-std::map<int, double> EccentricityCalculator::dijkstra(int source) const {
+// Bellman-Ford algorithm - works with negative weights
+std::map<int, double> EccentricityCalculator::bellmanFord(int source) const {
     std::map<int, double> dist;
     const double INF = std::numeric_limits<double>::infinity();
     
-    // Initialize distances
+    // Initialize all distances to infinity, source to 0
     for (int v : m_graph_.vertexIds()) {
         dist[v] = INF;
     }
     dist[source] = 0.0;
     
-    // Priority queue: (distance, vertex)
-    using P = std::pair<double, int>;
-    std::priority_queue<P, std::vector<P>, std::greater<P>> pq;
-    pq.push({0.0, source});
+    int n = m_graph_.size();
     
-    while (!pq.empty()) {
-        auto [d, u] = pq.top();
-        pq.pop();
+    // Relax all edges V-1 times
+    for (int i = 0; i < n - 1; ++i) {
+        bool changed = false;
         
-        if (d > dist[u]) continue;
-        
-        for (auto const& [v, w] : m_graph_.neighbors(u)) {
-            double newDist = dist[u] + w;
-            if (newDist < dist[v]) {
-                dist[v] = newDist;
-                pq.push({newDist, v});
+        // For each vertex u
+        for (int u : m_graph_.vertexIds()) {
+            if (dist[u] == INF) continue;  // Skip unreachable vertices
+            
+            // For each neighbor v of u
+            for (auto const& [v, w] : m_graph_.neighbors(u)) {
+                double newDist = dist[u] + w;
+                if (newDist < dist[v]) {
+                    dist[v] = newDist;
+                    changed = true;
+                }
             }
         }
+        
+        // Early termination if no changes
+        if (!changed) break;
     }
     
     return dist;
@@ -50,21 +54,25 @@ EccentricityResult EccentricityCalculator::compute() {
     
     auto vertices = m_graph_.vertexIds();
     
-    // Compute eccentricity for each vertex
+    // Compute eccentricity for each vertex using Bellman-Ford
     for (int v : vertices) {
-        auto dists = dijkstra(v);
+        auto dists = bellmanFord(v);
         
         // Eccentricity = maximum distance to any reachable vertex
         double ecc = 0.0;
+        bool hasReachable = false;
+        
         for (auto const& [u, d] : dists) {
             if (u != v && d != INF) {
                 ecc = std::max(ecc, d);
+                hasReachable = true;
             }
         }
         
-        result.eccentricities[v] = ecc;
-        result.radius = std::min(result.radius, ecc);
-        result.diameter = std::max(result.diameter, ecc);
+        // If no other vertices reachable, eccentricity is 0
+        result.eccentricities[v] = hasReachable ? ecc : 0.0;
+        result.radius = std::min(result.radius, result.eccentricities[v]);
+        result.diameter = std::max(result.diameter, result.eccentricities[v]);
     }
     
     // Find center (vertices with eccentricity = radius)
