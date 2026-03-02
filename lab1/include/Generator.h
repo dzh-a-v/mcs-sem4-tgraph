@@ -68,16 +68,16 @@ constexpr double BINOMIAL_P_DEGREE = 0.3; // Success probability for degrees
 
 // Binomial distribution parameters for edge weights
 constexpr int BINOMIAL_N_WEIGHT = 10;    // Number of trials for weights
-constexpr double BINOMIAL_P_WEIGHT = 0.5; // Success probability for weights
+constexpr double BINOMIAL_P_WEIGHT = 0.3; // Success probability for weights
 
-/// Theoretical characteristics of binomial distribution B(n, p)
+/// Theoretical characteristics
 struct BinomialCharacteristics {
-    double mean;           // np
-    double variance;       // npq
-    double stdDev;         // sqrt(npq)
-    int mode;              // floor((n+1)p)
-    double skewness;       // (q-p)/sqrt(npq)
-    double kurtosis;       // (1-6pq)/(npq)
+    double mean;           
+    double variance;       
+    double stdDev;
+    int mode;  
+    double skewness;
+    double kurtosis;
 };
 
 /// Statistics computed from actual graph
@@ -95,18 +95,12 @@ enum class WeightType {
     Mixed
 };
 
-/// Generates random acyclic graphs with weighted edges.
-/// Vertex degrees follow binomial distribution B(BINOMIAL_N_DEGREE, BINOMIAL_P_DEGREE).
-/// Edge weights follow binomial distribution B(BINOMIAL_N_WEIGHT, BINOMIAL_P_WEIGHT).
+
 class Generator {
 public:
     std::unique_ptr<Graph> generateAcyclicGraph(int vertices, int edges,
-        bool directed, WeightType weightType = WeightType::Positive);
-
-    /// Computes theoretical characteristics of binomial distribution
+        bool directed, WeightType weightType = WeightType::Positive);  
     static BinomialCharacteristics getTheoreticalCharacteristics(int n, double p);
-
-    /// Computes actual degree statistics from generated graph
     static GraphDegreeStatistics computeGraphStatistics(const Graph& graph);
 
 private:

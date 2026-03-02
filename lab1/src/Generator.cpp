@@ -82,7 +82,7 @@ int Generator::generateBinomial(int n, double p) {
     
     double q = 1.0 - p;
     double c = p / q;
-    double prob = std::pow(q, n);  // p(0) = q^n
+    double prob = std::pow(q, n);
     
     std::uniform_real_distribution<double> uniform(0.0, 1.0);
     double r = uniform(m_rng);
@@ -95,15 +95,12 @@ int Generator::generateBinomial(int n, double p) {
         }
         
         x++;
-        // Recurrence: p(x) = p(x-1) * c * (n+1-x) / x
         prob *= c * (n + 1 - x) / x;
     }
 }
 
 double Generator::generateWeight(WeightType weightType) {
-    // Generate weight using binomial distribution (Algorithm 1)
-    // Add 1 to avoid zero weights (binomial can return 0)
-    int weight = generateBinomial(BINOMIAL_N_WEIGHT, BINOMIAL_P_WEIGHT) + 1;
+    int weight = generateBinomial(BINOMIAL_N_WEIGHT, BINOMIAL_P_WEIGHT);
     
     switch (weightType) {
         case WeightType::Positive:
@@ -115,7 +112,6 @@ double Generator::generateWeight(WeightType weightType) {
             return sign(m_rng) ? static_cast<double>(weight) : -static_cast<double>(weight);
         }
     }
-    return static_cast<double>(weight);
 }
 
 std::unique_ptr<Graph> Generator::generateAcyclicGraph(int vertices, int edges, bool directed, WeightType weightType) {
@@ -130,24 +126,25 @@ std::unique_ptr<Graph> Generator::generateAcyclicGraph(int vertices, int edges, 
     std::vector<int> targetDegrees(vertices);
     int totalDegree = 0;
     for (int i = 0; i < vertices; ++i) {
-        // Limit degree to avoid impossible situations
         targetDegrees[i] = std::min(generateBinomial(BINOMIAL_N_DEGREE, BINOMIAL_P_DEGREE), vertices - 1);
         totalDegree += targetDegrees[i];
     }
     
-    // For undirected graphs, total degree must be even (handshaking lemma)
-    if (!directed && totalDegree % 2 != 0) {
-        // Adjust one vertex degree to make sum even
-        for (int i = 0; i < vertices && totalDegree % 2 != 0; ++i) {
-            if (targetDegrees[i] > 0) {
-                targetDegrees[i]--;
-                totalDegree--;
-            }
-        }
-    }
+    // // handshaking lemma
+    // if (!directed && totalDegree % 2 != 0) {
+    //     // Adjust one vertex degree to make sum even
+    //     for (int i = 0; i < vertices && totalDegree % 2 != 0; ++i) {
+    //         if (targetDegrees[i] > 0) {
+    //             targetDegrees[i]--;
+    //             totalDegree--;
+    //         }
+    //     }
+    // }
+    // I decided I don't need it because I either have directed graph or do +2.
     
-    // Calculate max possible edges for acyclic graph
-    int maxEdges = directed ? (vertices * (vertices - 1)) / 2 : (vertices * (vertices - 1)) / 2;
+    int maxEdges = directed 
+        ? (vertices * (vertices - 1)) 
+        : (vertices * (vertices - 1)) / 2;
     int actualEdges = std::min(edges, maxEdges);
     
     // Track current degree of each vertex
@@ -156,9 +153,9 @@ std::unique_ptr<Graph> Generator::generateAcyclicGraph(int vertices, int edges, 
     
     int added = 0;
     int attempts = 0;
-    const int maxAttempts = actualEdges * 100;
+    //const int maxAttempts = actualEdges * 100;
     
-    while (added < actualEdges && attempts < maxAttempts) {
+    while (added < actualEdges) { // && attempts < maxAttempts) {
         attempts++;
         
         // Select two vertices u < v (ensures acyclicity for directed)
@@ -170,16 +167,16 @@ std::unique_ptr<Graph> Generator::generateAcyclicGraph(int vertices, int edges, 
             continue;
         }
         
-        // Check degree constraints
-        int maxDegreeU = directed ? vertices - 1 - u : vertices - 1;
-        int maxDegreeV = directed ? v : vertices - 1;
+        // // Check degree constraints
+        // int maxDegreeU = directed ? vertices - 1 - u : vertices - 1;
+        // int maxDegreeV = directed ? v : vertices - 1;
         
-        if (currentDegree[u] >= targetDegrees[u] && targetDegrees[u] > 0) {
-            continue;
-        }
-        if (currentDegree[v] >= targetDegrees[v] && targetDegrees[v] > 0) {
-            continue;
-        }
+        // if (currentDegree[u] >= targetDegrees[u] && targetDegrees[u] > 0) {
+        //     continue;
+        // }
+        // if (currentDegree[v] >= targetDegrees[v] && targetDegrees[v] > 0) {
+        //     continue;
+        // }
         
         // Add edge with binomial-distributed weight
         graph->addEdge(u, v, generateWeight(weightType));
@@ -194,7 +191,7 @@ std::unique_ptr<Graph> Generator::generateAcyclicGraph(int vertices, int edges, 
     std::vector<bool> visited(vertices, false);
     std::vector<int> queue;
     
-    if (vertices > 0) {
+    //if (vertices > 0) {
         queue.push_back(0);
         visited[0] = true;
         
@@ -208,7 +205,7 @@ std::unique_ptr<Graph> Generator::generateAcyclicGraph(int vertices, int edges, 
                 }
             }
         }
-    }
+    //}
     
     // Connect unvisited vertices
     for (int i = 1; i < vertices; ++i) {
