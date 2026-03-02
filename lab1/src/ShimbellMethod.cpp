@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <limits>
 #include <stdexcept>
+#include <iomanip>
 
 KPathCalculator::KPathCalculator(const AdjacencyGraph& graph)
     : m_graph(graph)
@@ -132,4 +133,70 @@ WeightTable KPathCalculator::multiplyMaxPlus(
 int KPathCalculator::mapVertexToIndex(int vertexId) const {
     auto iter = std::find(m_vertexIds.begin(), m_vertexIds.end(), vertexId);
     return static_cast<int>(std::distance(m_vertexIds.begin(), iter));
+}
+
+void printWeightTable(std::ostream& out, const WeightTable& table, 
+                      const std::vector<int>& vertexIds) {
+    const size_t n = table.size();
+    if (n == 0) return;
+
+    // Print header row
+    out << "      ";
+    for (int v : vertexIds) {
+        out << std::setw(10) << v;
+    }
+    out << "\n";
+
+    // Print separator
+    out << "      ";
+    for (size_t i = 0; i < n; ++i) {
+        out << "----------";
+    }
+    out << "\n";
+
+    // Print matrix rows
+    for (size_t i = 0; i < n; ++i) {
+        out << std::setw(5) << vertexIds[i] << " |";
+        for (size_t j = 0; j < n; ++j) {
+            if (table[i][j].has_value()) {
+                out << std::setw(10) << table[i][j].value();
+            } else {
+                out << std::setw(10) << "∞";
+            }
+        }
+        out << "\n";
+    }
+}
+
+void printAdjacencyMatrix(std::ostream& out, const AdjacencyMatrix& matrix, 
+                          const std::vector<int>& vertexIds) {
+    const size_t n = matrix.size();
+    if (n == 0) return;
+
+    // Print header row
+    out << "      ";
+    for (int v : vertexIds) {
+        out << std::setw(10) << v;
+    }
+    out << "\n";
+
+    // Print separator
+    out << "      ";
+    for (size_t i = 0; i < n; ++i) {
+        out << "----------";
+    }
+    out << "\n";
+
+    // Print matrix rows
+    for (size_t i = 0; i < n; ++i) {
+        out << std::setw(5) << vertexIds[i] << " |";
+        for (size_t j = 0; j < n; ++j) {
+            if (matrix[i][j].has_value()) {
+                out << std::setw(10) << matrix[i][j].value();
+            } else {
+                out << std::setw(10) << "∞";
+            }
+        }
+        out << "\n";
+    }
 }

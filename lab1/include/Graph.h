@@ -6,10 +6,13 @@
 
 /// Represents a single weighted edge
 struct WeightedEdge {
-    int from;   
-    int to;  
+    int from;
+    int to;
     double weight;
 };
+
+/// Adjacency matrix type (nullopt = no edge)
+using AdjacencyMatrix = std::vector<std::vector<std::optional<double>>>;
 
 /// Graph class with adjacency list representation
 class AdjacencyGraph {
@@ -24,6 +27,9 @@ public:
     bool hasVertex(int id) const; // FtF
     bool isDirected() const;
     int size() const;
+
+    /// Get adjacency matrix representation
+    AdjacencyMatrix getAdjacencyMatrix() const;
 
 private:
     bool m_directed;

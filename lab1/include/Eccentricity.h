@@ -5,46 +5,25 @@
 #include <optional>
 #include <map>
 
-/*
- * =============================================================================
- * ECCENTRICITY ANALYSIS (Shimbell's Method Version)
- * =============================================================================
- * 
- * Computes vertex eccentricities, graph center, and diametrical vertices.
- * 
- * Algorithm: Uses Shimbell's method for k = 1, 2, ..., V-1
- *   1. Run Shimbell for each path length k
- *   2. For each vertex pair (i,j), take minimum across all k values
- *   3. Compute eccentricity from minimum distances
- * 
- * Why Shimbell? Lab requirement - only Shimbell's method allowed.
- * 
- * Complexity: O(V^5) - runs Shimbell V times, each O(V^3)
- * =============================================================================
- */
-
 /// Eccentricity computation result
 struct EccentricityData {
-    std::map<int, double> eccentricities;  /// e(v) for each vertex
-    std::vector<int> centerVertices;       /// Vertices with min eccentricity
-    std::vector<int> diametricalVertices;  /// Vertices with max eccentricity
-    double radius;                         /// Minimum eccentricity
-    double diameter;                       /// Maximum eccentricity
+    std::map<int, double> eccentricities; 
+    std::vector<int> centerVertices;
+    std::vector<int> diametricalVertices;
+    double radius;
+    double diameter;
 };
 
-/// Eccentricity calculator using Shimbell's method
+
 class GraphAnalyzer {
 public:
-    /// Initialize with graph
     explicit GraphAnalyzer(const AdjacencyGraph& graph);
     
-    /// Compute all eccentricities using Shimbell
     EccentricityData analyze();
 
 private:
     const AdjacencyGraph& m_graph;
     int m_vertexCount;
     
-    /// Compute shortest paths between all pairs using Shimbell
     std::map<std::pair<int,int>, double> computeAllShortestPaths() const;
 };

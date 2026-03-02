@@ -13,7 +13,7 @@ std::map<std::pair<int,int>, double> GraphAnalyzer::computeAllShortestPaths() co
     
     auto vertexIds = m_graph.vertexIds();
     
-    // Initialize all pairs to infinity
+    // Initialize all pairs to infinity so that they are not optimal
     for (int i : vertexIds) {
         for (int j : vertexIds) {
             shortestPaths[{i, j}] = INF;
@@ -40,8 +40,7 @@ std::map<std::pair<int,int>, double> GraphAnalyzer::computeAllShortestPaths() co
                 }
             }
         } catch (const std::exception&) {
-            // Skip if Shimbell fails for this k
-            continue;
+            continue; // I'm not sure I'll need it, but it helped me once
         }
     }
     
@@ -57,10 +56,8 @@ EccentricityData GraphAnalyzer::analyze() {
     
     auto vertices = m_graph.vertexIds();
     
-    // Compute shortest paths between all pairs
     auto allShortest = computeAllShortestPaths();
     
-    // Compute eccentricity for each vertex
     for (int v : vertices) {
         double ecc = 0.0;
         bool hasReachable = false;
@@ -80,7 +77,6 @@ EccentricityData GraphAnalyzer::analyze() {
         result.diameter = std::max(result.diameter, result.eccentricities[v]);
     }
     
-    // Find center and diametrical vertices
     for (const auto& [v, ecc] : result.eccentricities) {
         if (std::abs(ecc - result.radius) < 1e-9) {
             result.centerVertices.push_back(v);

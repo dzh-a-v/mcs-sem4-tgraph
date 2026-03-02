@@ -155,3 +155,48 @@
  *   - Connected: path exists between any two vertices
  * =============================================================================
  */
+
+
+
+
+ /*
+ * =============================================================================
+ * SHIMBEL'S ALGORITHM FOR K-EDGE PATHS
+ * =============================================================================
+ * 
+ * Finds minimum and maximum weight paths with EXACTLY k edges
+ * between all pairs of vertices.
+ * 
+ * Method: Matrix multiplication over semirings
+ *   - (min, +) semiring for shortest paths
+ *   - (max, +) semiring for longest paths
+ * 
+ * Key insight: A^k gives optimal k-edge paths
+ *   where A is the adjacency matrix
+ * 
+ * Complexity: O(k * V^3)
+ * =============================================================================
+ */
+
+
+
+
+
+
+ /*
+ * =============================================================================
+ * ECCENTRICITY ANALYSIS (Shimbell's Method Version)
+ * =============================================================================
+ * 
+ * Computes vertex eccentricities, graph center, and diametrical vertices.
+ * 
+ * Algorithm: Uses Shimbell's method for k = 1, 2, ..., V-1
+ *   1. Run Shimbell for each path length k
+ *   2. For each vertex pair (i,j), take minimum across all k values
+ *   3. Compute eccentricity from minimum distances
+ * 
+ * Why Shimbell? Lab requirement - only Shimbell's method allowed.
+ * 
+ * Complexity: O(V^5) - runs Shimbell V times, each O(V^3)
+ * =============================================================================
+ */

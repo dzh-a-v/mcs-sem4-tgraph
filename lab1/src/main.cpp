@@ -18,6 +18,8 @@ void showMenu() {
     std::cout << "  4. Find all paths between vertices\n";
     std::cout << "  5. Show graph details\n";
     std::cout << "  6. Compare distribution statistics\n";
+    std::cout << "  7. Show adjacency matrix\n";
+    std::cout << "  8. Show weight matrix (Shimbell k=1)\n";
     std::cout << "  0. Quit\n";
     std::cout << "===============================\n";
     std::cout << "> ";
@@ -293,7 +295,41 @@ int main() {
                 showGraphStats(currentGraph);
                 break;
             }
-            
+
+            // =========================================================
+            case 7:  // Show Adjacency Matrix
+            {
+                if (!currentGraph) {
+                    std::cout << "[!] Generate a graph first\n";
+                    break;
+                }
+
+                std::cout << "\n=== ADJACENCY MATRIX ===\n";
+                auto matrix = currentGraph->getAdjacencyMatrix();
+                printAdjacencyMatrix(std::cout, matrix, currentGraph->vertexIds());
+                break;
+            }
+
+            // =========================================================
+            case 8:  // Show Weight Matrix (Shimbell k=1)
+            {
+                if (!currentGraph) {
+                    std::cout << "[!] Generate a graph first\n";
+                    break;
+                }
+
+                std::cout << "\n=== WEIGHT MATRIX (k=1) ===\n";
+                try {
+                    KPathCalculator calculator(*currentGraph);
+                    auto result = calculator.compute(1);
+                    auto vertexIds = currentGraph->vertexIds();
+                    printWeightTable(std::cout, result.minWeights, vertexIds);
+                } catch (const std::exception& ex) {
+                    std::cout << "[ERROR] " << ex.what() << "\n";
+                }
+                break;
+            }
+
             // =========================================================
             case 0:  // Exit
             {
