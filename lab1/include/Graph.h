@@ -47,13 +47,13 @@ public:
     explicit Graph(bool directed = true);
     void addVertex(int id);
     void addEdge(int from, int to, double weight);
-    [[nodiscard]] std::vector<int> vertexIds() const;
-    [[nodiscard]] std::vector<Edge> edges() const;
-    [[nodiscard]] std::vector<std::pair<int, double>> neighbors(int v) const;
-    [[nodiscard]] std::optional<double> getEdgeWeight(int from, int to) const;
-    [[nodiscard]] bool hasVertex(int id) const;
-    [[nodiscard]] bool isDirected() const;
-    [[nodiscard]] int size() const;
+    std::vector<int> vertexIds() const;
+    std::vector<Edge> edges() const;
+    std::vector<std::pair<int, double>> neighbors(int v) const;
+    std::optional<double> getEdgeWeight(int from, int to) const;
+    bool hasVertex(int id) const;
+    bool isDirected() const;
+    int size() const;
 
 private:
     bool m_directed;
