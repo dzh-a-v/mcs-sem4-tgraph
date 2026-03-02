@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <limits>
 #include "include/Graph.h"
 #include "include/Generator.h"
@@ -59,22 +60,31 @@ WeightSign selectWeightSign() {
 }
 
 void displayMatrix(const std::string& title, const WeightTable& matrix, const std::vector<int>& vertexIds) {
-    std::cout << "\n--- " << title << " ---\n   ";
+    std::cout << "\n--- " << title << " ---\n";
+    std::cout << "i = no path\n\n";
     
     // Header row
+    std::cout << "      ";
     for (int id : vertexIds) {
-        std::cout << "v" << id << " ";
+        std::cout << std::setw(10) << id;
     }
     std::cout << "\n";
-    
+
+    // Separator
+    std::cout << "      ";
+    for (size_t i = 0; i < matrix.size(); ++i) {
+        std::cout << "----------";
+    }
+    std::cout << "\n";
+
     // Data rows
     for (size_t row = 0; row < matrix.size(); ++row) {
-        std::cout << "v" << vertexIds[row] << " ";
+        std::cout << std::setw(5) << vertexIds[row] << " |";
         for (size_t col = 0; col < matrix[row].size(); ++col) {
             if (matrix[row][col].has_value()) {
-                std::cout << matrix[row][col].value() << " ";
+                std::cout << std::setw(10) << matrix[row][col].value();
             } else {
-                std::cout << "inf ";
+                std::cout << std::setw(10) << "i";
             }
         }
         std::cout << "\n";
@@ -304,7 +314,9 @@ int main() {
                     break;
                 }
 
-                std::cout << "\n=== ADJACENCY MATRIX ===\n";
+                std::cout << "\n=== ADJACENCY MATRIX (direct edges) ===\n";
+                std::cout << "Shows direct edges between vertices (1 edge)\n";
+                std::cout << "1 = edge exists, 0 = no edge\n";
                 auto matrix = currentGraph->getAdjacencyMatrix();
                 printAdjacencyMatrix(std::cout, matrix, currentGraph->vertexIds());
                 break;
@@ -318,7 +330,9 @@ int main() {
                     break;
                 }
 
-                std::cout << "\n=== WEIGHT MATRIX (k=1) ===\n";
+                std::cout << "\n=== WEIGHT MATRIX (Shimbell, k=1) ===\n";
+                std::cout << "Minimum weight paths with EXACTLY 1 edge\n";
+                std::cout << "i = no path with exactly 1 edge\n";
                 try {
                     KPathCalculator calculator(*currentGraph);
                     auto result = calculator.compute(1);

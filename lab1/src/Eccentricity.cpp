@@ -18,16 +18,15 @@ std::map<std::pair<int,int>, double> GraphAnalyzer::computeAllShortestPaths() co
         for (int j : vertexIds) {
             shortestPaths[{i, j}] = INF;
         }
-        shortestPaths[{i, i}] = 0.0;  // Distance to self
+        shortestPaths[{i, i}] = 0;  // Distance to self eq 0
     }
     
-    // Run Shimbell for k = 1, 2, ..., V-1
+    // Sh For all Ks
     for (int k = 1; k < m_vertexCount; ++k) {
         try {
             KPathCalculator calculator(m_graph);
             auto result = calculator.compute(k);
             
-            // Update minimum distances
             for (size_t i = 0; i < vertexIds.size(); ++i) {
                 for (size_t j = 0; j < vertexIds.size(); ++j) {
                     if (result.minWeights[i][j].has_value()) {
@@ -72,7 +71,7 @@ EccentricityData GraphAnalyzer::analyze() {
             }
         }
         
-        result.eccentricities[v] = hasReachable ? ecc : 0.0;
+        result.eccentricities[v] = hasReachable ? ecc : 0.0; // FtF
         result.radius = std::min(result.radius, result.eccentricities[v]);
         result.diameter = std::max(result.diameter, result.eccentricities[v]);
     }

@@ -161,7 +161,7 @@ void printWeightTable(std::ostream& out, const WeightTable& table,
             if (table[i][j].has_value()) {
                 out << std::setw(10) << table[i][j].value();
             } else {
-                out << std::setw(10) << "∞";
+                out << std::setw(10) << "i";  // i = infinity (no path)
             }
         }
         out << "\n";
@@ -191,11 +191,8 @@ void printAdjacencyMatrix(std::ostream& out, const AdjacencyMatrix& matrix,
     for (size_t i = 0; i < n; ++i) {
         out << std::setw(5) << vertexIds[i] << " |";
         for (size_t j = 0; j < n; ++j) {
-            if (matrix[i][j].has_value()) {
-                out << std::setw(10) << matrix[i][j].value();
-            } else {
-                out << std::setw(10) << "∞";
-            }
+            // true = 1 (edge exists), false = 0 (no edge)
+            out << std::setw(10) << (matrix[i][j] ? 1 : 0);
         }
         out << "\n";
     }

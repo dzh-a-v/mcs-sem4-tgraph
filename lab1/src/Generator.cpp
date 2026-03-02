@@ -22,7 +22,9 @@ BinomialProperties AcyclicGraphBuilder::getBinomialProperties(int n, double p) {
     
     return props;
 }
-
+// ребра не вводим в инпут, они генерируются на основе степеней автоматически
+// указывать диаметральный путь
+// выводить все пути)
 DegreeStatistics AcyclicGraphBuilder::computeDegreeStatistics(const AdjacencyGraph& graph) {
     DegreeStatistics stats{};
     auto vertices = graph.vertexIds();

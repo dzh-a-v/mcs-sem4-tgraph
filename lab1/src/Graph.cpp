@@ -63,10 +63,8 @@ std::optional<double> AdjacencyGraph::getEdgeWeight(int from, int to) const {
 }
 
 AdjacencyMatrix AdjacencyGraph::getAdjacencyMatrix() const {
-    AdjacencyMatrix matrix(
-        m_vertices.size(),
-        std::vector<std::optional<double>>(m_vertices.size(), std::nullopt)
-    );
+    // Initialize with false (no edges)
+    AdjacencyMatrix matrix(m_vertices.size(), std::vector<bool>(m_vertices.size(), false));
 
     // Map vertex ID to index
     std::unordered_map<int, size_t> idToIndex;
@@ -74,20 +72,16 @@ AdjacencyMatrix AdjacencyGraph::getAdjacencyMatrix() const {
         idToIndex[m_vertices[i]] = i;
     }
 
-    // Fill diagonal with 0 (self-loops)
-    for (size_t i = 0; i < m_vertices.size(); ++i) {
-        matrix[i][i] = 0.0;
-    }
-
-    // Fill edge weights
+    // Fill edges (1 = edge exists)
+    // Note: diagonal stays 0 (no self-loops) unless explicitly added
     for (const auto& edge : edges()) {
         size_t row = idToIndex.at(edge.from);
         size_t col = idToIndex.at(edge.to);
-        matrix[row][col] = edge.weight;
+        matrix[row][col] = true;
 
         // Undirected: symmetric
         if (!m_directed) {
-            matrix[col][row] = edge.weight;
+            matrix[col][row] = true;
         }
     }
 

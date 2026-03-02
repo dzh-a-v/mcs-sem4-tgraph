@@ -4,27 +4,6 @@
 #include <optional>
 #include <map>
 
-/*
- * =============================================================================
- * ECCENTRICITY ANALYSIS (Bellman-Ford Version)
- * =============================================================================
- * 
- * COMPUTES vertex eccentricities, graph center, and diametrical vertices.
- * 
- * NOTE: This is the Bellman-Ford implementation saved for reference.
- *       Main program uses Shimbell's method instead.
- * 
- * Definitions:
- *   - Eccentricity e(v): max distance from v to any other vertex
- *   - Radius: minimum eccentricity (center vertices have this)
- *   - Diameter: maximum eccentricity (diametrical vertices have this)
- *   - Center: vertices with eccentricity = radius
- * 
- * Algorithm: Bellman-Ford from each vertex (supports negative weights)
- * Complexity: O(V^2 * E)
- * =============================================================================
- */
-
 /// Eccentricity computation result
 struct EccentricityData {
     std::map<int, double> eccentricities;  /// e(v) for each vertex

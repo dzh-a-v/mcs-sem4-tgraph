@@ -7,18 +7,15 @@
 //nullopt = unreachable
 using WeightTable = std::vector<std::vector<std::optional<double>>>;
 
-/// Result container for Shimbell computation
 struct ShimbellOutput {
     WeightTable minWeights;
     WeightTable maxWeights;
     int edgeCount;
 };
 
-/// Print weight matrix to stream (for debugging/visualization)
 void printWeightTable(std::ostream& out, const WeightTable& table, 
                       const std::vector<int>& vertexIds);
 
-/// Print adjacency matrix to stream
 void printAdjacencyMatrix(std::ostream& out, const AdjacencyMatrix& matrix, 
                           const std::vector<int>& vertexIds);
 
@@ -38,6 +35,5 @@ private:
 
     WeightTable multiplyMaxPlus(const WeightTable& left, const WeightTable& right) const;
 
-    // Map vertex ID to matrix index
-    int mapVertexToIndex(int vertexId) const;
+    int mapVertexToIndex(int vertexId) const; // ФтФ
 };
