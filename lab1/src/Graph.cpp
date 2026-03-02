@@ -37,9 +37,12 @@ bool AdjacencyGraph::hasVertex(int id) const {
 std::vector<WeightedEdge> AdjacencyGraph::edges() const {
     std::vector<WeightedEdge> edgeList;
     for (int u : m_vertices) {
-        for (auto const& [v, w] : m_adj.at(u)) {
-            if (m_directed || u < v) {
-                edgeList.push_back({u, v, w});
+        auto it = m_adj.find(u);
+        if (it != m_adj.end()) {
+            for (auto const& [v, w] : it->second) {
+                if (m_directed || u < v) {
+                    edgeList.push_back({u, v, w});
+                }
             }
         }
     }

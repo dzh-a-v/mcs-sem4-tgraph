@@ -60,9 +60,9 @@ class AcyclicGraphBuilder {
 public:
     /// Generate acyclic graph
     std::unique_ptr<AdjacencyGraph> generateAcyclicGraph(
-        int vertices, 
-        int edges, 
-        bool directed, 
+        int vertices,
+        int edges,
+        bool directed,
         WeightSign weightSign = WeightSign::Positive);
 
     /// Get theoretical binomial characteristics
@@ -71,11 +71,11 @@ public:
     /// Compute actual graph statistics
     static DegreeStatistics computeDegreeStatistics(const AdjacencyGraph& graph);
 
-private:
-    std::mt19937 m_rng{std::random_device{}()};
-
     /// Generate binomial random value (Algorithm 1)
     int sampleBinomial(int n, double p);
+
+private:
+    std::mt19937 m_rng{std::random_device{}()};
 
     /// Generate edge weight
     double sampleWeight(WeightSign weightSign);

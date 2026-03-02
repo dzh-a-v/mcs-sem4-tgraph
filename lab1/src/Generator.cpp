@@ -7,8 +7,6 @@
 #include <vector>
 #include <iostream>
 
-namespace tgraph {
-
 BinomialProperties AcyclicGraphBuilder::getBinomialProperties(int n, double p) {
     double q = 1.0 - p;
     double np1 = (n + 1) * p;
@@ -97,7 +95,9 @@ double AcyclicGraphBuilder::sampleWeight(WeightSign weightSign) {
 }
 
 // Check if graph is connected using BFS
-static bool checkConnected(const AdjacencyGraph& graph, int vertexCount) {
+// For directed graphs: use WEAK connectivity (ignore edge direction)
+// For undirected: standard connectivity
+static bool checkConnected(const AdjacencyGraph& graph, int vertexCount, bool directed) {
     if (vertexCount <= 1) return true;
     
     std::vector<bool> visited(vertexCount, false);
@@ -111,11 +111,37 @@ static bool checkConnected(const AdjacencyGraph& graph, int vertexCount) {
     size_t head = 0;
     while (head < queue.size()) {
         int current = queue[head++];
-        for (const auto& [neighbor, weight] : graph.neighbors(current)) {
-            if (!visited[neighbor]) {
-                visited[neighbor] = true;
+        
+        // For directed graphs, we need to check both outgoing AND incoming edges
+        // (weak connectivity - treat as undirected)
+        for (int other = 0; other < vertexCount; ++other) {
+            if (visited[other]) continue;
+            
+            // Check if there's an edge either direction
+            bool hasEdge = false;
+            
+            // Check outgoing from current
+            for (const auto& [neighbor, weight] : graph.neighbors(current)) {
+                if (neighbor == other) {
+                    hasEdge = true;
+                    break;
+                }
+            }
+            
+            // Check incoming to current (for directed graphs)
+            if (!hasEdge && directed) {
+                for (const auto& [neighbor, weight] : graph.neighbors(other)) {
+                    if (neighbor == current) {
+                        hasEdge = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (hasEdge) {
+                visited[other] = true;
                 visitedCount++;
-                queue.push_back(neighbor);
+                queue.push_back(other);
             }
         }
     }
@@ -130,50 +156,69 @@ static std::unique_ptr<AdjacencyGraph> tryBuildGraph(
     bool directed,
     WeightSign weightSign,
     const std::vector<int>& degreeTargets,
-    std::mt19937& rng)
+    std::mt19937& rng,
+    AcyclicGraphBuilder& builder)
 {
     auto graph = std::make_unique<AdjacencyGraph>(directed);
-    
+
     for (int i = 0; i < vertexCount; ++i) {
         graph->addVertex(i);
     }
-    
+
     std::vector<int> currentDegree(vertexCount, 0);
     std::set<std::pair<int, int>> addedEdges;
-    
+
     int edgesAdded = 0;
-    int attempts = 0;
-    const int maxAttempts = targetEdges * 100;
     
-    while (edgesAdded < targetEdges && attempts < maxAttempts) {
+    // Calculate max possible edges for acyclic graph (u < v constraint)
+    int maxPossibleEdges = vertexCount * (vertexCount - 1) / 2;
+    int actualTargetEdges = std::min(targetEdges, maxPossibleEdges);
+    
+    // Base attempts on actual possible edges, not requested edges
+    int attempts = 0;
+    const int maxAttempts = actualTargetEdges * 100 + 1000;
+
+    while (edgesAdded < actualTargetEdges && attempts < maxAttempts) {
         ++attempts;
-        
+
         int u = std::uniform_int_distribution<>(0, vertexCount - 2)(rng);
         int v = std::uniform_int_distribution<>(u + 1, vertexCount - 1)(rng);
-        
+
         if (addedEdges.count({u, v})) continue;
+
+        // Only check degree targets if they were set (> 0)
+        // But don't let them block us if we still need more edges
+        bool uBlocked = (degreeTargets[u] > 0 && currentDegree[u] >= degreeTargets[u]);
+        bool vBlocked = (degreeTargets[v] > 0 && currentDegree[v] >= degreeTargets[v]);
         
-        if (degreeTargets[u] > 0 && currentDegree[u] >= degreeTargets[u]) continue;
-        if (degreeTargets[v] > 0 && currentDegree[v] >= degreeTargets[v]) continue;
-        
+        // Skip only if BOTH vertices are at their degree limit
+        // This allows flexibility to reach targetEdges
+        if (uBlocked && vBlocked) continue;
+
         // Generate weight using binomial
-        int baseWeight = sampleBinomial(BINOMIAL_N_WEIGHT, BINOMIAL_P_WEIGHT);
+        int baseWeight = builder.sampleBinomial(BINOMIAL_N_WEIGHT, BINOMIAL_P_WEIGHT);
         double weight = static_cast<double>(baseWeight);
-        
+
         if (weightSign == WeightSign::Negative) {
             weight = -weight;
         } else if (weightSign == WeightSign::Mixed) {
             std::uniform_int_distribution<int> sign(0, 1);
             if (sign(rng)) weight = -weight;
         }
-        
+
         graph->addEdge(u, v, weight);
         addedEdges.insert({u, v});
         ++currentDegree[u];
         ++currentDegree[v];
         ++edgesAdded;
     }
-    
+
+    if (edgesAdded < actualTargetEdges) {
+        std::cout << "[!] Warning: Could only add " << edgesAdded 
+                  << " edges (max possible for " << vertexCount 
+                  << " vertices: " << maxPossibleEdges << ")\n";
+    }
+
     return graph;
 }
 
@@ -210,10 +255,10 @@ std::unique_ptr<AdjacencyGraph> AcyclicGraphBuilder::generateAcyclicGraph(
         
         // Step 2: Build graph based on degree targets
         auto graph = tryBuildGraph(vertexCount, targetEdges, directed, weightSign, 
-                                   degreeTargets, m_rng);
+                                   degreeTargets, m_rng, *this);
         
-        // Step 3: Check if connected
-        if (checkConnected(*graph, vertexCount)) {
+        // Step 3: Check if connected (weak connectivity for directed)
+        if (checkConnected(*graph, vertexCount, directed)) {
             // Success! Return connected graph
             return graph;
         }
@@ -237,7 +282,6 @@ std::unique_ptr<AdjacencyGraph> AcyclicGraphBuilder::generateAcyclicGraph(
         );
     }
     
-    return tryBuildGraph(vertexCount, targetEdges, directed, weightSign, 
-                         degreeTargets, m_rng);
-}
+    return tryBuildGraph(vertexCount, targetEdges, directed, weightSign,
+                         degreeTargets, m_rng, *this);
 }
