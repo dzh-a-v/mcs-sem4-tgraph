@@ -6,122 +6,129 @@
 #include "include/PathCounter.h"
 #include "include/Eccentricity.h"
 
-using namespace graph;
+// ============================================================================
+// Helper Functions
+// ============================================================================
 
-void printMenu() {
-    std::cout << "\n========== MENU ==========\n";
-    std::cout << "1. Generate new graph\n";
-    std::cout << "2. Compute eccentricities and find center\n";
-    std::cout << "3. Shimbell method (min/max paths)\n";
-    std::cout << "4. Count paths between vertices\n";
-    std::cout << "5. Display graph info\n";
-    std::cout << "6. Show distribution comparison\n";
-    std::cout << "0. Exit\n";
-    std::cout << "==========================\n";
-    std::cout << "Choice: ";
+void showMenu() {
+    std::cout << "\n========== MAIN MENU ==========\n";
+    std::cout << "  1. Generate random graph\n";
+    std::cout << "  2. Calculate eccentricities & center\n";
+    std::cout << "  3. Shimbell's method (k-edge paths)\n";
+    std::cout << "  4. Find all paths between vertices\n";
+    std::cout << "  5. Show graph details\n";
+    std::cout << "  6. Compare distribution statistics\n";
+    std::cout << "  0. Quit\n";
+    std::cout << "===============================\n";
+    std::cout << "> ";
 }
 
-int readInt(const std::string& prompt) {
+int readInteger(const std::string& prompt) {
     std::cout << prompt;
-    int val;
-    while (!(std::cin >> val)) {
+    int value;
+    while (!(std::cin >> value)) {
         std::cin.clear();
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         std::cout << "Invalid input. " << prompt;
     }
-    return val;
+    return value;
 }
 
-WeightType readWeightType() {
-    std::cout << "\nSelect weight type:\n";
-    std::cout << "1. Positive only\n";
-    std::cout << "2. Negative only\n";
-    std::cout << "3. Mixed (positive and negative)\n";
-    std::cout << "Choice: ";
+WeightSign selectWeightSign() {
+    std::cout << "\n>>> Choose weight distribution:\n";
+    std::cout << "  1. Positive values only\n";
+    std::cout << "  2. Negative values only\n";
+    std::cout << "  3. Mixed (positive and negative)\n";
+    std::cout << "> ";
     
-    int choice;
-    while (!(std::cin >> choice) || choice < 1 || choice > 3) {
+    int option;
+    while (!(std::cin >> option) || option < 1 || option > 3) {
         std::cin.clear();
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        std::cout << "Invalid input. Choice (1-3): ";
+        std::cout << "Invalid. Enter 1-3: ";
     }
     
-    switch (choice) {
-        case 1: return WeightType::Positive;
-        case 2: return WeightType::Negative;
-        case 3: return WeightType::Mixed;
+    switch (option) {
+        case 1: return WeightSign::Positive;
+        case 2: return WeightSign::Negative;
+        case 3: return WeightSign::Mixed;
+        default: return WeightSign::Positive;
     }
-    return WeightType::Positive;
 }
 
-void printMatrix(const std::string& title, const DistanceMatrix& mat, const std::vector<int>& ids) {
-    std::cout << "\n=== " << title << " ===\n";
-    std::cout << "   ";
-    for (int id : ids) std::cout << "v" << id << " ";
+void displayMatrix(const std::string& title, const WeightTable& matrix, const std::vector<int>& vertexIds) {
+    std::cout << "\n--- " << title << " ---\n   ";
+    
+    // Header row
+    for (int id : vertexIds) {
+        std::cout << "v" << id << " ";
+    }
     std::cout << "\n";
-    for (size_t i = 0; i < mat.size(); ++i) {
-        std::cout << "v" << ids[i] << " ";
-        for (size_t j = 0; j < mat[i].size(); ++j) {
-            if (mat[i][j]) std::cout << mat[i][j].value() << " ";
-            else std::cout << "inf ";
+    
+    // Data rows
+    for (size_t row = 0; row < matrix.size(); ++row) {
+        std::cout << "v" << vertexIds[row] << " ";
+        for (size_t col = 0; col < matrix[row].size(); ++col) {
+            if (matrix[row][col].has_value()) {
+                std::cout << matrix[row][col].value() << " ";
+            } else {
+                std::cout << "inf ";
+            }
         }
         std::cout << "\n";
     }
 }
 
-void printDistributionComparison() {
-    std::cout << "\n=== Binomial Distribution Characteristics ===\n";
+void showDistributionInfo() {
+    std::cout << "\n=== BINOMIAL DISTRIBUTION PARAMETERS ===\n";
     
-    auto theoretical = Generator::getTheoreticalCharacteristics(BINOMIAL_N_DEGREE, BINOMIAL_P_DEGREE);
+    auto props = AcyclicGraphBuilder::getBinomialProperties(BINOMIAL_N_DEGREE, BINOMIAL_P_DEGREE);
     
-    std::cout << "Theoretical for degrees B(" << BINOMIAL_N_DEGREE << ", " << BINOMIAL_P_DEGREE << "):\n";
-    std::cout << "  Mean:     " << theoretical.mean << "\n";
-    std::cout << "  Variance: " << theoretical.variance << "\n";
-    std::cout << "  Std Dev:  " << theoretical.stdDev << "\n";
-    std::cout << "  Mode:     " << theoretical.mode << "\n";
-    std::cout << "  Skewness: " << theoretical.skewness << "\n";
-    std::cout << "  Kurtosis: " << theoretical.kurtosis << "\n";
+    std::cout << "For degrees B(" << BINOMIAL_N_DEGREE << ", " << BINOMIAL_P_DEGREE << "):\n";
+    std::cout << "  Expected mean:   " << props.mean << "\n";
+    std::cout << "  Expected var:    " << props.variance << "\n";
+    std::cout << "  Expected std:    " << props.stdDev << "\n";
+    std::cout << "  Mode:            " << props.mode << "\n";
     
-    std::cout << "\nTheoretical for weights B(" << BINOMIAL_N_WEIGHT << ", " << BINOMIAL_P_WEIGHT << "):\n";
-    std::cout << "  Mean:     " << BINOMIAL_N_WEIGHT * BINOMIAL_P_WEIGHT << "\n";
-    std::cout << "  Variance: " << BINOMIAL_N_WEIGHT * BINOMIAL_P_WEIGHT * (1.0 - BINOMIAL_P_WEIGHT) << "\n";
+    std::cout << "\nFor weights B(" << BINOMIAL_N_WEIGHT << ", " << BINOMIAL_P_WEIGHT << "):\n";
+    std::cout << "  Expected mean:   " << (BINOMIAL_N_WEIGHT * BINOMIAL_P_WEIGHT) << "\n";
+    std::cout << "  Expected var:    " << (BINOMIAL_N_WEIGHT * BINOMIAL_P_WEIGHT * (1.0 - BINOMIAL_P_WEIGHT)) << "\n";
 }
 
-void printGraphStatistics(const std::unique_ptr<Graph>& graph) {
+void showGraphStats(const std::unique_ptr<AdjacencyGraph>& graph) {
     if (!graph) {
-        std::cout << "[!] No graph generated yet.\n";
+        std::cout << "[!] No graph available\n";
         return;
     }
     
-    std::cout << "\n=== Generated Graph Statistics ===\n";
+    std::cout << "\n=== ACTUAL GRAPH STATISTICS ===\n";
+    auto stats = AcyclicGraphBuilder::computeDegreeStatistics(*graph);
     
-    auto stats = Generator::computeGraphStatistics(*graph);
+    std::cout << "Vertices:       " << graph->size() << "\n";
+    std::cout << "Edges:          " << graph->edges().size() << "\n";
+    std::cout << "Mean degree:    " << stats.meanDegree << "\n";
+    std::cout << "Variance:       " << stats.variance << "\n";
+    std::cout << "Std deviation:  " << stats.stdDev << "\n";
+    std::cout << "Min degree:     " << stats.minDegree << "\n";
+    std::cout << "Max degree:     " << stats.maxDegree << "\n";
     
-    std::cout << "Vertices:     " << graph->size() << "\n";
-    std::cout << "Edges:        " << graph->edges().size() << "\n";
-    std::cout << "Mean degree:  " << stats.meanDegree << "\n";
-    std::cout << "Variance:     " << stats.variance << "\n";
-    std::cout << "Std Dev:      " << stats.stdDev << "\n";
-    std::cout << "Min degree:   " << stats.minDegree << "\n";
-    std::cout << "Max degree:   " << stats.maxDegree << "\n";
-    
-    // Compare with theoretical
-    auto theoretical = Generator::getTheoreticalCharacteristics(BINOMIAL_N_DEGREE, BINOMIAL_P_DEGREE);
-    std::cout << "\n--- Comparison with Theoretical ---\n";
-    std::cout << "Mean error:   " << std::abs(stats.meanDegree - theoretical.mean) << "\n";
-    std::cout << "Var error:    " << std::abs(stats.variance - theoretical.variance) << "\n";
+    // Compare with theory
+    auto props = AcyclicGraphBuilder::getBinomialProperties(BINOMIAL_N_DEGREE, BINOMIAL_P_DEGREE);
+    std::cout << "\n--- Deviation from Theory ---\n";
+    std::cout << "Mean error:  " << std::abs(stats.meanDegree - props.mean) << "\n";
+    std::cout << "Var error:   " << std::abs(stats.variance - props.variance) << "\n";
 }
 
-void displayGraphInfo(const std::unique_ptr<Graph>& graph) {
+void showGraphDetails(const std::unique_ptr<AdjacencyGraph>& graph) {
     if (!graph) {
-        std::cout << "[!] No graph generated yet.\n";
+        std::cout << "[!] No graph available\n";
         return;
     }
     
-    std::cout << "\n=== Graph Information ===\n";
-    std::cout << "Type: " << (graph->isDirected() ? "Directed" : "Undirected") << "\n";
-    std::cout << "Vertices: " << graph->size() << "\n";
-    std::cout << "Edges: " << graph->edges().size() << "\n";
+    std::cout << "\n=== GRAPH INFORMATION ===\n";
+    std::cout << "Type:       " << (graph->isDirected() ? "Directed" : "Undirected") << "\n";
+    std::cout << "Vertices:   " << graph->size() << "\n";
+    std::cout << "Edges:      " << graph->edges().size() << "\n";
     std::cout << "Vertex IDs: ";
     for (int id : graph->vertexIds()) {
         std::cout << id << " ";
@@ -129,159 +136,179 @@ void displayGraphInfo(const std::unique_ptr<Graph>& graph) {
     std::cout << "\n";
 }
 
+// ============================================================================
+// Main Program
+// ============================================================================
+
 int main() {
-    std::unique_ptr<Graph> graph;
-    int choice;
+    std::unique_ptr<AdjacencyGraph> currentGraph;
+    int userChoice;
     
     do {
-        printMenu();
-        choice = readInt("");
+        showMenu();
+        userChoice = readInteger("");
         
-        switch (choice) {
-            case 1: {
-                // Generate new graph
+        switch (userChoice) {
+            // =========================================================
+            case 1:  // Generate Graph
+            {
                 std::cout << "\n--- Graph Generation ---\n";
-                int vertices = readInt("Number of vertices: ");
-                int edges = readInt("Number of edges: ");
+                int numVertices = readInteger("Number of vertices: ");
+                int numEdges = readInteger("Number of edges: ");
                 
-                std::cout << "Graph type: (1) Directed, (2) Undirected: ";
-                int graphType;
-                while (!(std::cin >> graphType) || graphType < 1 || graphType > 2) {
+                std::cout << "Graph type (1=Directed, 2=Undirected): ";
+                int typeOption;
+                while (!(std::cin >> typeOption) || typeOption < 1 || typeOption > 2) {
                     std::cin.clear();
                     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-                    std::cout << "Invalid input. Choice (1-2): ";
+                    std::cout << "Invalid. Enter 1 or 2: ";
                 }
-                bool directed = (graphType == 1);
+                bool isDirected = (typeOption == 1);
                 
-                WeightType weightType = readWeightType();
+                WeightSign wSign = selectWeightSign();
                 
-                Generator gen;
-                graph = gen.generateAcyclicGraph(vertices, edges, directed, weightType);
+                AcyclicGraphBuilder builder;
+                currentGraph = builder.generateAcyclicGraph(
+                    numVertices, numEdges, isDirected, wSign);
                 
-                std::cout << "[OK] Graph generated (V=" << vertices << ", E=" << graph->edges().size() << ")\n";
-                std::cout << "    Degree params: n=" << BINOMIAL_N_DEGREE << ", p=" << BINOMIAL_P_DEGREE << "\n";
-                std::cout << "    Weight params: n=" << BINOMIAL_N_WEIGHT << ", p=" << BINOMIAL_P_WEIGHT << "\n";
+                std::cout << "\n[OK] Graph created successfully!\n";
+                std::cout << "    Vertices: " << numVertices << "\n";
+                std::cout << "    Edges:    " << currentGraph->edges().size() << "\n";
+                std::cout << "    Degree params:  n=" << BINOMIAL_N_DEGREE << ", p=" << BINOMIAL_P_DEGREE << "\n";
+                std::cout << "    Weight params:  n=" << BINOMIAL_N_WEIGHT << ", p=" << BINOMIAL_P_WEIGHT << "\n";
                 
-                // Show distribution comparison
-                printDistributionComparison();
-                printGraphStatistics(graph);
+                showDistributionInfo();
+                showGraphStats(currentGraph);
                 break;
             }
             
-            case 2: {
-                // Compute eccentricities
-                if (!graph) {
-                    std::cout << "[!] Generate a graph first.\n";
+            // =========================================================
+            case 2:  // Eccentricity Analysis (Shimbell's Method)
+            {
+                if (!currentGraph) {
+                    std::cout << "[!] Generate a graph first\n";
                     break;
                 }
                 
-                std::cout << "\n--- Eccentricity Analysis ---\n";
-                EccentricityCalculator calc(*graph);
-                auto result = calc.compute();
+                std::cout << "\n--- Eccentricity Computation (Shimbell) ---\n";
+                GraphAnalyzer analyzer(*currentGraph);
+                auto result = analyzer.analyze();
                 
-                std::cout << "\nEccentricities:\n";
-                for (auto const& [v, ecc] : result.eccentricities) {
-                    std::cout << "  v" << v << ": " << ecc << "\n";
+                std::cout << "\nVertex Eccentricities:\n";
+                for (const auto& [vertex, ecc] : result.eccentricities) {
+                    std::cout << "  v" << vertex << ": " << ecc << "\n";
                 }
                 
-                std::cout << "\nRadius: " << result.radius << "\n";
-                std::cout << "Diameter: " << result.diameter << "\n";
+                std::cout << "\nRadius:     " << result.radius << "\n";
+                std::cout << "Diameter:   " << result.diameter << "\n";
                 
-                std::cout << "Center vertices: ";
-                for (int v : result.center) {
-                    std::cout << "v" << v << " ";
-                }
+                std::cout << "Center:     ";
+                for (int v : result.centerVertices) std::cout << "v" << v << " ";
                 std::cout << "\n";
                 
-                std::cout << "Diametrical vertices: ";
-                for (int v : result.diametrical) {
-                    std::cout << "v" << v << " ";
-                }
+                std::cout << "Diametrical: ";
+                for (int v : result.diametricalVertices) std::cout << "v" << v << " ";
                 std::cout << "\n";
                 break;
             }
             
-            case 3: {
-                // Shimbell method
-                if (!graph) {
-                    std::cout << "[!] Generate a graph first.\n";
+            // =========================================================
+            case 3:  // Shimbell's Method
+            {
+                if (!currentGraph) {
+                    std::cout << "[!] Generate a graph first\n";
                     break;
                 }
                 
-                int pathLen = readInt("\nPath length for Shimbell (k): ");
+                int k = readInteger("\nPath length k (number of edges): ");
                 
                 try {
-                    ShimbellMethod shimbell(*graph);
-                    auto result = shimbell.compute(pathLen);
+                    KPathCalculator calculator(*currentGraph);
+                    auto result = calculator.compute(k);
                     
-                    auto ids = graph->vertexIds();
-                    printMatrix("Minimum paths (Shimbell)", result.min_distances, ids);
-                    printMatrix("Maximum paths (Shimbell)", result.max_distances, ids);
-                } catch (const std::exception& e) {
-                    std::cout << "[ERROR] " << e.what() << "\n";
+                    auto vertexIds = currentGraph->vertexIds();
+                    displayMatrix("Minimum Weight Paths", result.minWeights, vertexIds);
+                    displayMatrix("Maximum Weight Paths", result.maxWeights, vertexIds);
+                } catch (const std::exception& ex) {
+                    std::cout << "[ERROR] " << ex.what() << "\n";
                 }
                 break;
             }
             
-            case 4: {
-                // Count paths
-                if (!graph) {
-                    std::cout << "[!] Generate a graph first.\n";
+            // =========================================================
+            case 4:  // Path Counting
+            {
+                if (!currentGraph) {
+                    std::cout << "[!] Generate a graph first\n";
                     break;
                 }
                 
-                int from = readInt("\nStart vertex: ");
-                int to = readInt("End vertex: ");
+                int startVertex = readInteger("\nStart vertex: ");
+                int endVertex = readInteger("End vertex: ");
                 
-                if (!graph->hasVertex(from) || !graph->hasVertex(to)) {
-                    std::cout << "[FAIL] Vertices do not exist\n";
+                if (!currentGraph->hasVertex(startVertex) || 
+                    !currentGraph->hasVertex(endVertex)) {
+                    std::cout << "[FAIL] Invalid vertices\n";
                     break;
                 }
                 
-                PathCounter counter(*graph);
-                auto paths = counter.getAllPaths(from, to);
+                SimplePathFinder finder(*currentGraph);
+                auto allPaths = finder.findAllPaths(startVertex, endVertex);
                 
-                if (paths.empty()) {
+                if (allPaths.empty()) {
                     std::cout << "[FAIL] No paths found\n";
                 } else {
-                    std::cout << "[OK] Paths found: " << paths.size() << "\n";
+                    std::cout << "[OK] Found " << allPaths.size() << " path(s)\n";
+                    
+                    // Display first 10 paths
+                    size_t limit = std::min(allPaths.size(), size_t(10));
                     std::cout << "Paths:\n";
-                    for (size_t i = 0; i < paths.size() && i < 10; ++i) {
+                    for (size_t i = 0; i < limit; ++i) {
                         std::cout << "  ";
-                        for (size_t j = 0; j < paths[i].size(); ++j) {
-                            std::cout << "v" << paths[i][j];
-                            if (j < paths[i].size() - 1) std::cout << " -> ";
+                        for (size_t j = 0; j < allPaths[i].size(); ++j) {
+                            std::cout << "v" << allPaths[i][j];
+                            if (j < allPaths[i].size() - 1) std::cout << " -> ";
                         }
                         std::cout << "\n";
                     }
-                    if (paths.size() > 10) {
-                        std::cout << "  ... and " << (paths.size() - 10) << " more\n";
+                    
+                    if (allPaths.size() > 10) {
+                        std::cout << "  ... and " << (allPaths.size() - 10) << " more\n";
                     }
                 }
                 break;
             }
             
-            case 5: {
-                displayGraphInfo(graph);
+            // =========================================================
+            case 5:  // Graph Details
+            {
+                showGraphDetails(currentGraph);
                 break;
             }
             
-            case 6: {
-                printDistributionComparison();
-                printGraphStatistics(graph);
+            // =========================================================
+            case 6:  // Distribution Comparison
+            {
+                showDistributionInfo();
+                showGraphStats(currentGraph);
                 break;
             }
             
-            case 0: {
-                std::cout << "Exiting...\n";
+            // =========================================================
+            case 0:  // Exit
+            {
+                std::cout << "Exiting program...\n";
                 break;
             }
             
-            default: {
-                std::cout << "[!] Invalid choice. Try again.\n";
+            // =========================================================
+            default:  // Invalid Option
+            {
+                std::cout << "[!] Invalid choice. Please try again.\n";
             }
         }
-    } while (choice != 0);
+        
+    } while (userChoice != 0);
     
     return 0;
 }

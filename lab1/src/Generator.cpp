@@ -5,220 +5,239 @@
 #include <numeric>
 #include <algorithm>
 #include <vector>
+#include <iostream>
 
-namespace graph {
+namespace tgraph {
 
-BinomialCharacteristics Generator::getTheoreticalCharacteristics(int n, double p) {
+BinomialProperties AcyclicGraphBuilder::getBinomialProperties(int n, double p) {
     double q = 1.0 - p;
     double np1 = (n + 1) * p;
     
-    BinomialCharacteristics chars;
-    chars.mean = n * p;
-    chars.variance = n * p * q;
-    chars.stdDev = std::sqrt(chars.variance);
+    BinomialProperties props{};
+    props.mean = n * p;
+    props.variance = n * p * q;
+    props.stdDev = std::sqrt(props.variance);
     
-    // Mode formula from Section 1.6
-    double intpart;
-    if (std::modf(np1, &intpart) == 0.0) {
-        // (n+1)p is integer - two modes
-        chars.mode = static_cast<int>(np1);  // Use the higher mode
-    } else {
-        // (n+1)p is not integer - floor
-        chars.mode = static_cast<int>(np1);
-    }
+    props.mode = static_cast<int>(np1);
+    props.skewness = (q - p) / std::sqrt(n * p * q);
+    props.kurtosis = (1.0 - 6.0 * p * q) / (n * p * q);
     
-    chars.skewness = (q - p) / std::sqrt(n * p * q);
-    chars.kurtosis = (1.0 - 6.0 * p * q) / (n * p * q);
-    
-    return chars;
+    return props;
 }
 
-GraphDegreeStatistics Generator::computeGraphStatistics(const Graph& graph) {
-    GraphDegreeStatistics stats;
-    
+DegreeStatistics AcyclicGraphBuilder::computeDegreeStatistics(const AdjacencyGraph& graph) {
+    DegreeStatistics stats{};
     auto vertices = graph.vertexIds();
-    int n = static_cast<int>(vertices.size());
+    int vertexCount = static_cast<int>(vertices.size());
     
-    if (n == 0) {
-        stats.meanDegree = 0;
-        stats.variance = 0;
-        stats.stdDev = 0;
-        stats.minDegree = 0;
-        stats.maxDegree = 0;
+    if (vertexCount == 0) {
         return stats;
     }
     
-    // Compute degree for each vertex
-    std::vector<int> degrees;
-    degrees.reserve(n);
+    std::vector<int> degreeList;
+    degreeList.reserve(vertexCount);
     
     for (int v : vertices) {
-        degrees.push_back(static_cast<int>(graph.neighbors(v).size()));
+        degreeList.push_back(static_cast<int>(graph.neighbors(v).size()));
     }
     
-    // Mean
-    double sum = std::accumulate(degrees.begin(), degrees.end(), 0.0);
-    stats.meanDegree = sum / n;
+    double total = std::accumulate(degreeList.begin(), degreeList.end(), 0.0);
+    stats.meanDegree = total / vertexCount;
     
-    // Variance
-    double sqSum = 0.0;
-    for (int d : degrees) {
-        sqSum += (d - stats.meanDegree) * (d - stats.meanDegree);
+    double sqDiffSum = 0.0;
+    for (int deg : degreeList) {
+        sqDiffSum += (deg - stats.meanDegree) * (deg - stats.meanDegree);
     }
-    stats.variance = sqSum / n;
+    stats.variance = sqDiffSum / vertexCount;
     stats.stdDev = std::sqrt(stats.variance);
     
-    // Min/Max
-    auto [minIt, maxIt] = std::minmax_element(degrees.begin(), degrees.end());
-    stats.minDegree = *minIt;
-    stats.maxDegree = *maxIt;
+    auto result = std::minmax_element(degreeList.begin(), degreeList.end());
+    stats.minDegree = *result.first;
+    stats.maxDegree = *result.second;
     
     return stats;
 }
 
-int Generator::generateBinomial(int n, double p) {
-    // Algorithm 1 from Vadzinsky reference (Section 6.1)
-    // Uses inverse transform method with recurrence relation
-    
+int AcyclicGraphBuilder::sampleBinomial(int n, double p) {
     double q = 1.0 - p;
-    double c = p / q;
-    double prob = std::pow(q, n);
+    double ratio = p / q;
+    double probability = std::pow(q, n);
     
     std::uniform_real_distribution<double> uniform(0.0, 1.0);
-    double r = uniform(m_rng);
+    double randomVal = uniform(m_rng);
     int x = 0;
     
     while (true) {
-        r -= prob;
-        if (r < 0.0) {
+        randomVal -= probability;
+        if (randomVal < 0.0) {
             return x;
         }
         
-        x++;
-        prob *= c * (n + 1 - x) / x;
+        ++x;
+        probability *= ratio * (n + 1 - x) / x;
     }
 }
 
-double Generator::generateWeight(WeightType weightType) {
-    int weight = generateBinomial(BINOMIAL_N_WEIGHT, BINOMIAL_P_WEIGHT);
+double AcyclicGraphBuilder::sampleWeight(WeightSign weightSign) {
+    int baseWeight = sampleBinomial(BINOMIAL_N_WEIGHT, BINOMIAL_P_WEIGHT);
     
-    switch (weightType) {
-        case WeightType::Positive:
-            return static_cast<double>(weight);
-        case WeightType::Negative:
-            return -static_cast<double>(weight);
-        case WeightType::Mixed: {
-            std::uniform_int_distribution<int> sign(0, 1);
-            return sign(m_rng) ? static_cast<double>(weight) : -static_cast<double>(weight);
+    switch (weightSign) {
+        case WeightSign::Positive:
+            return static_cast<double>(baseWeight);
+        case WeightSign::Negative:
+            return -static_cast<double>(baseWeight);
+        case WeightSign::Mixed: {
+            std::uniform_int_distribution<int> coinFlip(0, 1);
+            return coinFlip(m_rng) ? 
+                static_cast<double>(baseWeight) : 
+                -static_cast<double>(baseWeight);
         }
     }
+    return static_cast<double>(baseWeight);
 }
 
-std::unique_ptr<Graph> Generator::generateAcyclicGraph(int vertices, int edges, bool directed, WeightType weightType) {
-    auto graph = std::make_unique<Graph>(directed);
+// Check if graph is connected using BFS
+static bool checkConnected(const AdjacencyGraph& graph, int vertexCount) {
+    if (vertexCount <= 1) return true;
     
-    // Add all vertices
-    for (int i = 0; i < vertices; ++i) {
+    std::vector<bool> visited(vertexCount, false);
+    std::vector<int> queue;
+    int visitedCount = 0;
+    
+    queue.push_back(0);
+    visited[0] = true;
+    visitedCount++;
+    
+    size_t head = 0;
+    while (head < queue.size()) {
+        int current = queue[head++];
+        for (const auto& [neighbor, weight] : graph.neighbors(current)) {
+            if (!visited[neighbor]) {
+                visited[neighbor] = true;
+                visitedCount++;
+                queue.push_back(neighbor);
+            }
+        }
+    }
+    
+    return visitedCount == vertexCount;
+}
+
+// Try to build graph with given degree targets
+static std::unique_ptr<AdjacencyGraph> tryBuildGraph(
+    int vertexCount,
+    int targetEdges,
+    bool directed,
+    WeightSign weightSign,
+    const std::vector<int>& degreeTargets,
+    std::mt19937& rng)
+{
+    auto graph = std::make_unique<AdjacencyGraph>(directed);
+    
+    for (int i = 0; i < vertexCount; ++i) {
         graph->addVertex(i);
     }
     
-    // Generate target degrees for each vertex using binomial distribution
-    std::vector<int> targetDegrees(vertices);
-    int totalDegree = 0;
-    for (int i = 0; i < vertices; ++i) {
-        targetDegrees[i] = std::min(generateBinomial(BINOMIAL_N_DEGREE, BINOMIAL_P_DEGREE), vertices - 1);
-        totalDegree += targetDegrees[i];
-    }
+    std::vector<int> currentDegree(vertexCount, 0);
+    std::set<std::pair<int, int>> addedEdges;
     
-    // // handshaking lemma
-    // if (!directed && totalDegree % 2 != 0) {
-    //     // Adjust one vertex degree to make sum even
-    //     for (int i = 0; i < vertices && totalDegree % 2 != 0; ++i) {
-    //         if (targetDegrees[i] > 0) {
-    //             targetDegrees[i]--;
-    //             totalDegree--;
-    //         }
-    //     }
-    // }
-    // I decided I don't need it because I either have directed graph or do +2.
-    
-    int maxEdges = directed 
-        ? (vertices * (vertices - 1)) 
-        : (vertices * (vertices - 1)) / 2;
-    int actualEdges = std::min(edges, maxEdges);
-    
-    // Track current degree of each vertex
-    std::vector<int> currentDegree(vertices, 0);
-    std::set<std::pair<int, int>> existingEdges;
-    
-    int added = 0;
+    int edgesAdded = 0;
     int attempts = 0;
-    //const int maxAttempts = actualEdges * 100;
+    const int maxAttempts = targetEdges * 100;
     
-    while (added < actualEdges) { // && attempts < maxAttempts) {
-        attempts++;
+    while (edgesAdded < targetEdges && attempts < maxAttempts) {
+        ++attempts;
         
-        // Select two vertices u < v (ensures acyclicity for directed)
-        int u = std::uniform_int_distribution<>(0, vertices - 2)(m_rng);
-        int v = std::uniform_int_distribution<>(u + 1, vertices - 1)(m_rng);
+        int u = std::uniform_int_distribution<>(0, vertexCount - 2)(rng);
+        int v = std::uniform_int_distribution<>(u + 1, vertexCount - 1)(rng);
         
-        // Check if edge already exists
-        if (existingEdges.find({u, v}) != existingEdges.end()) {
-            continue;
+        if (addedEdges.count({u, v})) continue;
+        
+        if (degreeTargets[u] > 0 && currentDegree[u] >= degreeTargets[u]) continue;
+        if (degreeTargets[v] > 0 && currentDegree[v] >= degreeTargets[v]) continue;
+        
+        // Generate weight using binomial
+        int baseWeight = sampleBinomial(BINOMIAL_N_WEIGHT, BINOMIAL_P_WEIGHT);
+        double weight = static_cast<double>(baseWeight);
+        
+        if (weightSign == WeightSign::Negative) {
+            weight = -weight;
+        } else if (weightSign == WeightSign::Mixed) {
+            std::uniform_int_distribution<int> sign(0, 1);
+            if (sign(rng)) weight = -weight;
         }
         
-        // // Check degree constraints
-        // int maxDegreeU = directed ? vertices - 1 - u : vertices - 1;
-        // int maxDegreeV = directed ? v : vertices - 1;
-        
-        // if (currentDegree[u] >= targetDegrees[u] && targetDegrees[u] > 0) {
-        //     continue;
-        // }
-        // if (currentDegree[v] >= targetDegrees[v] && targetDegrees[v] > 0) {
-        //     continue;
-        // }
-        
-        // Add edge with binomial-distributed weight
-        graph->addEdge(u, v, generateWeight(weightType));
-        existingEdges.insert({u, v});
-        currentDegree[u]++;
-        currentDegree[v]++;
-        added++;
-    }
-    
-    // Ensure connectivity: if graph is not connected, add minimum spanning edges
-    // For acyclic directed graph: ensure path 0 -> 1 -> 2 -> ... -> n-1 exists
-    std::vector<bool> visited(vertices, false);
-    std::vector<int> queue;
-    
-    //if (vertices > 0) {
-        queue.push_back(0);
-        visited[0] = true;
-        
-        size_t head = 0;
-        while (head < queue.size()) {
-            int curr = queue[head++];
-            for (auto const& [neighbor, _] : graph->neighbors(curr)) {
-                if (!visited[neighbor]) {
-                    visited[neighbor] = true;
-                    queue.push_back(neighbor);
-                }
-            }
-        }
-    //}
-    
-    // Connect unvisited vertices
-    for (int i = 1; i < vertices; ++i) {
-        if (!visited[i]) {
-            // Add edge from i-1 to i to ensure connectivity
-            if (existingEdges.find({i - 1, i}) == existingEdges.end()) {
-                graph->addEdge(i - 1, i, generateWeight(weightType));
-                existingEdges.insert({i - 1, i});
-            }
-            visited[i] = true;
-        }
+        graph->addEdge(u, v, weight);
+        addedEdges.insert({u, v});
+        ++currentDegree[u];
+        ++currentDegree[v];
+        ++edgesAdded;
     }
     
     return graph;
+}
+
+std::unique_ptr<AdjacencyGraph> AcyclicGraphBuilder::generateAcyclicGraph(
+    int vertexCount, 
+    int targetEdges, 
+    bool directed, 
+    WeightSign weightSign) 
+{
+    const int maxRegenerations = 50;
+    
+    for (int attempt = 1; attempt <= maxRegenerations; ++attempt) {
+        // Step 1: Generate ALL vertex degrees using binomial distribution
+        std::vector<int> degreeTargets(vertexCount);
+        int totalDegree = 0;
+        
+        for (int i = 0; i < vertexCount; ++i) {
+            degreeTargets[i] = std::min(
+                sampleBinomial(BINOMIAL_N_DEGREE, BINOMIAL_P_DEGREE),
+                vertexCount - 1
+            );
+            totalDegree += degreeTargets[i];
+        }
+        
+        // Fix parity for undirected graphs (handshaking lemma)
+        if (!directed && totalDegree % 2 != 0) {
+            for (int i = 0; i < vertexCount && totalDegree % 2 != 0; ++i) {
+                if (degreeTargets[i] > 0) {
+                    --degreeTargets[i];
+                    --totalDegree;
+                }
+            }
+        }
+        
+        // Step 2: Build graph based on degree targets
+        auto graph = tryBuildGraph(vertexCount, targetEdges, directed, weightSign, 
+                                   degreeTargets, m_rng);
+        
+        // Step 3: Check if connected
+        if (checkConnected(*graph, vertexCount)) {
+            // Success! Return connected graph
+            return graph;
+        }
+        
+        // Step 4: Not connected → discard EVERYTHING and regenerate
+        // (both degrees AND edges)
+        // Loop continues to next attempt
+    }
+    
+    // After max attempts, return last attempt
+    std::cout << "[!] Warning: Graph may be disconnected after " 
+              << maxRegenerations << " regeneration attempts\n";
+    std::cout << "    Try: more edges, or different binomial parameters (n, p)\n";
+    
+    // One final attempt
+    std::vector<int> degreeTargets(vertexCount);
+    for (int i = 0; i < vertexCount; ++i) {
+        degreeTargets[i] = std::min(
+            sampleBinomial(BINOMIAL_N_DEGREE, BINOMIAL_P_DEGREE),
+            vertexCount - 1
+        );
+    }
+    
+    return tryBuildGraph(vertexCount, targetEdges, directed, weightSign, 
+                         degreeTargets, m_rng);
 }
 }

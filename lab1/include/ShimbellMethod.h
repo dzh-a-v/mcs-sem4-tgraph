@@ -3,30 +3,58 @@
 #include <vector>
 #include <optional>
 
-namespace graph {
-using DistanceMatrix = std::vector<std::vector<std::optional<double>>>;
+/*
+ * =============================================================================
+ * SHIMBEL'S ALGORITHM FOR K-EDGE PATHS
+ * =============================================================================
+ * 
+ * Finds minimum and maximum weight paths with EXACTLY k edges
+ * between all pairs of vertices.
+ * 
+ * Method: Matrix multiplication over semirings
+ *   - (min, +) semiring for shortest paths
+ *   - (max, +) semiring for longest paths
+ * 
+ * Key insight: A^k gives optimal k-edge paths
+ *   where A is the adjacency matrix
+ * 
+ * Complexity: O(k * V^3)
+ * =============================================================================
+ */
 
-struct ShimbellResult {
-    DistanceMatrix min_distances;  
-    DistanceMatrix max_distances; 
-    int path_length; // Number of edges in the paths
+/// Distance matrix type (nullopt = infinity/unreachable)
+using WeightTable = std::vector<std::vector<std::optional<double>>>;
+
+/// Result container for Shimbell computation
+struct ShimbellOutput {
+    WeightTable minWeights;     /// Shortest k-edge paths
+    WeightTable maxWeights;     /// Longest k-edge paths
+    int edgeCount;              /// Number of edges (k)
 };
 
-/// Implements Shimbell's method for finding shortest and longest paths
-/// of exactly k edges between all pairs of vertices.
-/// Uses matrix multiplication approach over (min,+) and (max,+) semirings.
-class ShimbellMethod {
+/// Shimbell's method implementation
+class KPathCalculator {
 public:
-    explicit ShimbellMethod(const Graph& graph);
-    ShimbellResult compute(int pathLength);
+    /// Initialize with graph
+    explicit KPathCalculator(const AdjacencyGraph& graph);
+    
+    /// Compute k-edge paths
+    ShimbellOutput compute(int edgeCount);
 
 private:
-    const Graph& m_graph_;
-    std::vector<int> m_vertex_ids_;
-    int m_size_;
-    DistanceMatrix createAdjacencyMatrix() const;
-    DistanceMatrix multiplyMin(const DistanceMatrix& a, const DistanceMatrix& b) const;
-    DistanceMatrix multiplyMax(const DistanceMatrix& a, const DistanceMatrix& b) const;
-    int getIndex(int vertexId) const;
+    const AdjacencyGraph& m_graph;
+    std::vector<int> m_vertexIds;
+    int m_vertexCount;
+    
+    /// Build adjacency matrix
+    WeightTable buildWeightMatrix() const;
+    
+    /// (min, +) matrix multiplication
+    WeightTable multiplyMinPlus(const WeightTable& left, const WeightTable& right) const;
+    
+    /// (max, +) matrix multiplication  
+    WeightTable multiplyMaxPlus(const WeightTable& left, const WeightTable& right) const;
+    
+    /// Map vertex ID to matrix index
+    int mapVertexToIndex(int vertexId) const;
 };
-}

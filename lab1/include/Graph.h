@@ -4,61 +4,64 @@
 #include <optional>
 #include <memory>
 
-namespace graph {
-
 /*
  * =============================================================================
  * GRAPH DATA STRUCTURE
  * =============================================================================
  * 
- * A graph G = (V, E) consists of:
- *   - V: a set of vertices (nodes)
- *   - E: a set of edges connecting pairs of vertices
- * 
- * This implementation supports:
- *   - Directed graphs: edges have direction (u → v)
- *   - Undirected graphs: edges are bidirectional (u — v)
- *   - Weighted edges: each edge has an associated cost/distance
- * 
- * Representation: Adjacency List
- *   - Space complexity: O(|V| + |E|)
- *   - Neighbor lookup: O(degree(v))
- *   - More efficient than adjacency matrix for sparse graphs
+ * Represents a weighted graph G = (V, E) using adjacency list.
+ * Supports both directed and undirected graphs.
  * 
  * Key Concepts:
- *   - Simple path: a path with no repeated vertices
- *   - Cycle: a path that starts and ends at the same vertex
- *   - Acyclic graph: a graph containing no cycles
- *   - Connected graph: there exists a path between any two vertices
+ *   - Simple path: no repeated vertices
+ *   - Cycle: path starting and ending at same vertex
+ *   - Acyclic: no cycles present
+ *   - Connected: path exists between any two vertices
  * =============================================================================
  */
 
-/// Represents a weighted edge connecting two vertices
-struct Edge {
-    int from;
-    int to;
-    double weight;
+/// Represents a single weighted edge
+struct WeightedEdge {
+    int from;       /// Source vertex ID
+    int to;         /// Destination vertex ID
+    double weight;  /// Edge weight/cost
 };
 
-/// Graph class supporting both directed and undirected weighted graphs.
-/// Contains adjacency list.
-class Graph {
+/// Graph class with adjacency list representation
+class AdjacencyGraph {
 public:
-    explicit Graph(bool directed = true);
+    /// Create graph (directed by default)
+    explicit AdjacencyGraph(bool directed = true);
+    
+    /// Add vertex if not exists
     void addVertex(int id);
+    
+    /// Add weighted edge (auto-adds vertices)
     void addEdge(int from, int to, double weight);
+    
+    /// Get all vertex IDs
     std::vector<int> vertexIds() const;
-    std::vector<Edge> edges() const;
+    
+    /// Get all edges
+    std::vector<WeightedEdge> edges() const;
+    
+    /// Get neighbors with weights
     std::vector<std::pair<int, double>> neighbors(int v) const;
+    
+    /// Get specific edge weight
     std::optional<double> getEdgeWeight(int from, int to) const;
+    
+    /// Check if vertex exists
     bool hasVertex(int id) const;
+    
+    /// Check if directed
     bool isDirected() const;
+    
+    /// Get vertex count
     int size() const;
 
 private:
     bool m_directed;
     std::vector<int> m_vertices;
     std::unordered_map<int, std::vector<std::pair<int, double>>> m_adj;
-    //  {        vertex_id:  {            neighbor_id: weight}        } 
 };
-}

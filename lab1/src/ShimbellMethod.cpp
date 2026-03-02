@@ -3,80 +3,133 @@
 #include <limits>
 #include <stdexcept>
 
-namespace graph {
+KPathCalculator::KPathCalculator(const AdjacencyGraph& graph)
+    : m_graph(graph)
+    , m_vertexIds(graph.vertexIds())
+    , m_vertexCount(graph.size())
+{}
 
-ShimbellMethod::ShimbellMethod(const Graph& graph)
-    : m_graph_(graph), m_vertex_ids_(graph.vertexIds()), m_size_(graph.size()) {}
-
-ShimbellResult ShimbellMethod::compute(int pathLength) {
-    if (pathLength <= 0) throw std::invalid_argument("Path length must be positive");
-
-    DistanceMatrix current_min = createAdjacencyMatrix();
-    DistanceMatrix current_max = createAdjacencyMatrix();
-
-    if (pathLength == 1) {
-        return {current_min, current_max, 1};
+ShimbellOutput KPathCalculator::compute(int edgeCount) {
+    if (edgeCount <= 0) {
+        throw std::invalid_argument("Edge count must be positive");
     }
-
-    DistanceMatrix base_min = current_min;
-    DistanceMatrix base_max = current_max;
-
-    for (int step = 2; step <= pathLength; ++step) {
-        current_min = multiplyMin(current_min, base_min);
-        current_max = multiplyMax(current_max, base_max);
+    
+    // Initialize with weight matrix (k=1)
+    WeightTable minMatrix = buildWeightMatrix();
+    WeightTable maxMatrix = buildWeightMatrix();
+    
+    // Base case: already have k=1
+    if (edgeCount == 1) {
+        return {minMatrix, maxMatrix, 1};
     }
-    return {current_min, current_max, pathLength};
+    
+    // Store base for repeated multiplication
+    WeightTable baseMin = minMatrix;
+    WeightTable baseMax = maxMatrix;
+    
+    // Iteratively compute A^k
+    for (int step = 2; step <= edgeCount; ++step) {
+        minMatrix = multiplyMinPlus(minMatrix, baseMin);
+        maxMatrix = multiplyMaxPlus(maxMatrix, baseMax);
+    }
+    
+    return {minMatrix, maxMatrix, edgeCount};
 }
 
-DistanceMatrix ShimbellMethod::createAdjacencyMatrix() const {
-    DistanceMatrix matrix(m_size_, std::vector<std::optional<double>>(m_size_, std::nullopt));
-    for (int i = 0; i < m_size_; ++i) matrix[i][i] = 0.0;
-
-    for (auto const& edge : m_graph_.edges()) {
-        int from_idx = getIndex(edge.from);
-        int to_idx = getIndex(edge.to);
-        matrix[from_idx][to_idx] = edge.weight;
-        if (!m_graph_.isDirected()) matrix[to_idx][from_idx] = edge.weight;
+WeightTable KPathCalculator::buildWeightMatrix() const {
+    const double INF_PLACEHOLDER = std::numeric_limits<double>::infinity();
+    
+    // Initialize with infinity (nullopt)
+    WeightTable matrix(
+        m_vertexCount, 
+        std::vector<std::optional<double>>(m_vertexCount, std::nullopt)
+    );
+    
+    // Diagonal = 0 (self-loops)
+    for (int i = 0; i < m_vertexCount; ++i) {
+        matrix[i][i] = 0.0;
     }
+    
+    // Fill edge weights
+    for (const auto& edge : m_graph.edges()) {
+        int row = mapVertexToIndex(edge.from);
+        int col = mapVertexToIndex(edge.to);
+        matrix[row][col] = edge.weight;
+        
+        // Undirected: symmetric
+        if (!m_graph.isDirected()) {
+            matrix[col][row] = edge.weight;
+        }
+    }
+    
     return matrix;
 }
 
-DistanceMatrix ShimbellMethod::multiplyMin(const DistanceMatrix& a, const DistanceMatrix& b) const {
-    DistanceMatrix res(m_size_, std::vector<std::optional<double>>(m_size_, std::nullopt));
-    for (int i = 0; i < m_size_; ++i) {
-        for (int j = 0; j < m_size_; ++j) {
-            std::optional<double> best = std::nullopt;
-            for (int k = 0; k < m_size_; ++k) {
-                if (a[i][k] && b[k][j]) {
-                    double val = a[i][k].value() + b[k][j].value();
-                    if (!best || val < best.value()) best = val;
+WeightTable KPathCalculator::multiplyMinPlus(
+    const WeightTable& left, 
+    const WeightTable& right) const 
+{
+    WeightTable result(
+        m_vertexCount,
+        std::vector<std::optional<double>>(m_vertexCount, std::nullopt)
+    );
+    
+    // For each cell (i, j)
+    for (int i = 0; i < m_vertexCount; ++i) {
+        for (int j = 0; j < m_vertexCount; ++j) {
+            std::optional<double> minimum = std::nullopt;
+            
+            // Try all intermediate vertices k
+            for (int k = 0; k < m_vertexCount; ++k) {
+                if (left[i][k].has_value() && right[k][j].has_value()) {
+                    double sum = left[i][k].value() + right[k][j].value();
+                    
+                    if (!minimum.has_value() || sum < minimum.value()) {
+                        minimum = sum;
+                    }
                 }
             }
-            res[i][j] = best;
+            
+            result[i][j] = minimum;
         }
     }
-    return res;
+    
+    return result;
 }
 
-DistanceMatrix ShimbellMethod::multiplyMax(const DistanceMatrix& a, const DistanceMatrix& b) const {
-    DistanceMatrix res(m_size_, std::vector<std::optional<double>>(m_size_, std::nullopt));
-    for (int i = 0; i < m_size_; ++i) {
-        for (int j = 0; j < m_size_; ++j) {
-            std::optional<double> best = std::nullopt;
-            for (int k = 0; k < m_size_; ++k) {
-                if (a[i][k] && b[k][j]) {
-                    double val = a[i][k].value() + b[k][j].value();
-                    if (!best || val > best.value()) best = val;
+WeightTable KPathCalculator::multiplyMaxPlus(
+    const WeightTable& left, 
+    const WeightTable& right) const 
+{
+    WeightTable result(
+        m_vertexCount,
+        std::vector<std::optional<double>>(m_vertexCount, std::nullopt)
+    );
+    
+    // For each cell (i, j)
+    for (int i = 0; i < m_vertexCount; ++i) {
+        for (int j = 0; j < m_vertexCount; ++j) {
+            std::optional<double> maximum = std::nullopt;
+            
+            // Try all intermediate vertices k
+            for (int k = 0; k < m_vertexCount; ++k) {
+                if (left[i][k].has_value() && right[k][j].has_value()) {
+                    double sum = left[i][k].value() + right[k][j].value();
+                    
+                    if (!maximum.has_value() || sum > maximum.value()) {
+                        maximum = sum;
+                    }
                 }
             }
-            res[i][j] = best;
+            
+            result[i][j] = maximum;
         }
     }
-    return res;
+    
+    return result;
 }
 
-int ShimbellMethod::getIndex(int vertexId) const {
-    auto it = std::find(m_vertex_ids_.begin(), m_vertex_ids_.end(), vertexId);
-    return static_cast<int>(std::distance(m_vertex_ids_.begin(), it));
-}
+int KPathCalculator::mapVertexToIndex(int vertexId) const {
+    auto iter = std::find(m_vertexIds.begin(), m_vertexIds.end(), vertexId);
+    return static_cast<int>(std::distance(m_vertexIds.begin(), iter));
 }

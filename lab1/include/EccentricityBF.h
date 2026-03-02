@@ -1,25 +1,27 @@
 #pragma once
 #include "include/Graph.h"
-#include "include/ShimbellMethod.h"
 #include <vector>
 #include <optional>
 #include <map>
 
 /*
  * =============================================================================
- * ECCENTRICITY ANALYSIS (Shimbell's Method Version)
+ * ECCENTRICITY ANALYSIS (Bellman-Ford Version)
  * =============================================================================
  * 
- * Computes vertex eccentricities, graph center, and diametrical vertices.
+ * COMPUTES vertex eccentricities, graph center, and diametrical vertices.
  * 
- * Algorithm: Uses Shimbell's method for k = 1, 2, ..., V-1
- *   1. Run Shimbell for each path length k
- *   2. For each vertex pair (i,j), take minimum across all k values
- *   3. Compute eccentricity from minimum distances
+ * NOTE: This is the Bellman-Ford implementation saved for reference.
+ *       Main program uses Shimbell's method instead.
  * 
- * Why Shimbell? Lab requirement - only Shimbell's method allowed.
+ * Definitions:
+ *   - Eccentricity e(v): max distance from v to any other vertex
+ *   - Radius: minimum eccentricity (center vertices have this)
+ *   - Diameter: maximum eccentricity (diametrical vertices have this)
+ *   - Center: vertices with eccentricity = radius
  * 
- * Complexity: O(V^5) - runs Shimbell V times, each O(V^3)
+ * Algorithm: Bellman-Ford from each vertex (supports negative weights)
+ * Complexity: O(V^2 * E)
  * =============================================================================
  */
 
@@ -32,19 +34,18 @@ struct EccentricityData {
     double diameter;                       /// Maximum eccentricity
 };
 
-/// Eccentricity calculator using Shimbell's method
-class GraphAnalyzer {
+/// Eccentricity calculator using Bellman-Ford
+class GraphAnalyzerBF {
 public:
     /// Initialize with graph
-    explicit GraphAnalyzer(const AdjacencyGraph& graph);
+    explicit GraphAnalyzerBF(const AdjacencyGraph& graph);
     
-    /// Compute all eccentricities using Shimbell
+    /// Compute all eccentricities
     EccentricityData analyze();
 
 private:
     const AdjacencyGraph& m_graph;
-    int m_vertexCount;
     
-    /// Compute shortest paths between all pairs using Shimbell
-    std::map<std::pair<int,int>, double> computeAllShortestPaths() const;
+    /// Bellman-Ford shortest paths from source
+    std::map<int, double> runBellmanFord(int source) const;
 };

@@ -1,52 +1,60 @@
 #include "include/PathCounter.h"
 #include <unordered_map>
 
-namespace graph {
+SimplePathFinder::SimplePathFinder(AdjacencyGraph const& graph) 
+    : m_graph(graph) 
+{}
 
-// Constructs a PathCounter for the given graph
-PathCounter::PathCounter(Graph const& graph) : m_graph_(graph) {}
-
-// Returns the total number of simple paths from 'from' to 'to'
-int PathCounter::getPathCount(int from, int to) {
-    return static_cast<int>(getAllPaths(from, to).size());
+int SimplePathFinder::countPaths(int from, int to) {
+    PathCollection paths = findAllPaths(from, to);
+    return static_cast<int>(paths.size());
 }
 
-// Finds all simple paths between two vertices using backtracking.
-// Returns empty matrix if either vertex doesn't exist.
-PathMatrix PathCounter::getAllPaths(int from, int to) {
-    if (!m_graph_.hasVertex(from) || !m_graph_.hasVertex(to)) return {};
-    PathMatrix all_paths;
-    std::vector<int> current_path;
-    std::vector<bool> visited(m_graph_.size(), false);
-
-    auto ids = m_graph_.vertexIds();
-    std::unordered_map<int, int> idToIdx;
-    for(int i=0; i<ids.size(); ++i) idToIdx[ids[i]] = i;
-
-    backtrackAllPaths(from, to, visited, current_path, all_paths);
-    return all_paths;
+PathCollection SimplePathFinder::findAllPaths(int from, int to) {
+    // Validate vertices exist
+    if (!m_graph.hasVertex(from) || !m_graph.hasVertex(to)) {
+        return {};
+    }
+    
+    PathCollection collectedPaths;
+    std::vector<int> currentPath;
+    std::vector<bool> visited(m_graph.size(), false);
+    
+    // Map vertex IDs to indices for visited array
+    auto vertexList = m_graph.vertexIds();
+    std::unordered_map<int, int> idToIndex;
+    for (int i = 0; i < static_cast<int>(vertexList.size()); ++i) {
+        idToIndex[vertexList[i]] = i;
+    }
+    
+    dfsExplore(from, to, visited, currentPath, collectedPaths);
+    return collectedPaths;
 }
 
-// Recursive backtracking to enumerate all simple paths.
-// Marks vertices as visited to avoid cycles, then unmarks on backtrack
-// to allow exploring alternative paths through the same vertex.
-void PathCounter::backtrackAllPaths(int current, int target, std::vector<bool>& visited,
-                          std::vector<int>& currentPath, PathMatrix& allPaths) {
-    currentPath.push_back(current);
+void SimplePathFinder::dfsExplore(
+    int current, 
+    int target, 
+    std::vector<bool>& visited,
+    std::vector<int>& path, 
+    PathCollection& allPaths) 
+{
+    // Add current vertex to path
+    path.push_back(current);
     visited[current] = true;
-
+    
+    // Check if reached destination
     if (current == target) {
-        allPaths.push_back(currentPath);
+        allPaths.push_back(path);
     } else {
-        for (auto const& [neighborId, _] : m_graph_.neighbors(current)) {
+        // Explore unvisited neighbors
+        for (const auto& [neighborId, edgeWeight] : m_graph.neighbors(current)) {
             if (!visited[neighborId]) {
-                backtrackAllPaths(neighborId, target, visited, currentPath, allPaths);
+                dfsExplore(neighborId, target, visited, path, allPaths);
             }
         }
     }
-
-    // Backtrack: unmark vertex and remove from path
-    currentPath.pop_back();
+    
+    // Backtrack
+    path.pop_back();
     visited[current] = false;
-}
 }

@@ -2,89 +2,93 @@
 #include <limits>
 #include <algorithm>
 
-namespace graph {
+GraphAnalyzer::GraphAnalyzer(const AdjacencyGraph& graph)
+    : m_graph(graph)
+    , m_vertexCount(graph.size())
+{}
 
-EccentricityCalculator::EccentricityCalculator(const Graph& graph)
-    : m_graph_(graph) {}
-
-// Bellman-Ford algorithm - works with negative weights
-std::map<int, double> EccentricityCalculator::bellmanFord(int source) const {
-    std::map<int, double> dist;
-    const double INF = std::numeric_limits<double>::infinity();
+std::map<std::pair<int,int>, double> GraphAnalyzer::computeAllShortestPaths() const {
+    std::map<std::pair<int,int>, double> shortestPaths;
+    constexpr double INF = std::numeric_limits<double>::infinity();
     
-    // Initialize all distances to infinity, source to 0
-    for (int v : m_graph_.vertexIds()) {
-        dist[v] = INF;
+    auto vertexIds = m_graph.vertexIds();
+    
+    // Initialize all pairs to infinity
+    for (int i : vertexIds) {
+        for (int j : vertexIds) {
+            shortestPaths[{i, j}] = INF;
+        }
+        shortestPaths[{i, i}] = 0.0;  // Distance to self
     }
-    dist[source] = 0.0;
     
-    int n = m_graph_.size();
-    
-    // Relax all edges V-1 times
-    for (int i = 0; i < n - 1; ++i) {
-        bool changed = false;
-        
-        // For each vertex u
-        for (int u : m_graph_.vertexIds()) {
-            if (dist[u] == INF) continue;  // Skip unreachable vertices
+    // Run Shimbell for k = 1, 2, ..., V-1
+    for (int k = 1; k < m_vertexCount; ++k) {
+        try {
+            KPathCalculator calculator(m_graph);
+            auto result = calculator.compute(k);
             
-            // For each neighbor v of u
-            for (auto const& [v, w] : m_graph_.neighbors(u)) {
-                double newDist = dist[u] + w;
-                if (newDist < dist[v]) {
-                    dist[v] = newDist;
-                    changed = true;
+            // Update minimum distances
+            for (size_t i = 0; i < vertexIds.size(); ++i) {
+                for (size_t j = 0; j < vertexIds.size(); ++j) {
+                    if (result.minWeights[i][j].has_value()) {
+                        double dist = result.minWeights[i][j].value();
+                        double& current = shortestPaths[{vertexIds[i], vertexIds[j]}];
+                        if (dist < current) {
+                            current = dist;
+                        }
+                    }
                 }
             }
+        } catch (const std::exception&) {
+            // Skip if Shimbell fails for this k
+            continue;
         }
-        
-        // Early termination if no changes
-        if (!changed) break;
     }
     
-    return dist;
+    return shortestPaths;
 }
 
-EccentricityResult EccentricityCalculator::compute() {
-    EccentricityResult result;
-    const double INF = std::numeric_limits<double>::infinity();
+EccentricityData GraphAnalyzer::analyze() {
+    EccentricityData result;
+    constexpr double INF = std::numeric_limits<double>::infinity();
     
     result.radius = INF;
     result.diameter = -INF;
     
-    auto vertices = m_graph_.vertexIds();
+    auto vertices = m_graph.vertexIds();
     
-    // Compute eccentricity for each vertex using Bellman-Ford
+    // Compute shortest paths between all pairs
+    auto allShortest = computeAllShortestPaths();
+    
+    // Compute eccentricity for each vertex
     for (int v : vertices) {
-        auto dists = bellmanFord(v);
-        
-        // Eccentricity = maximum distance to any reachable vertex
         double ecc = 0.0;
         bool hasReachable = false;
         
-        for (auto const& [u, d] : dists) {
-            if (u != v && d != INF) {
-                ecc = std::max(ecc, d);
-                hasReachable = true;
+        for (int u : vertices) {
+            if (u != v) {
+                double dist = allShortest[{v, u}];
+                if (dist != INF) {
+                    ecc = std::max(ecc, dist);
+                    hasReachable = true;
+                }
             }
         }
         
-        // If no other vertices reachable, eccentricity is 0
         result.eccentricities[v] = hasReachable ? ecc : 0.0;
         result.radius = std::min(result.radius, result.eccentricities[v]);
         result.diameter = std::max(result.diameter, result.eccentricities[v]);
     }
     
-    // Find center (vertices with eccentricity = radius)
-    for (auto const& [v, ecc] : result.eccentricities) {
+    // Find center and diametrical vertices
+    for (const auto& [v, ecc] : result.eccentricities) {
         if (std::abs(ecc - result.radius) < 1e-9) {
-            result.center.push_back(v);
+            result.centerVertices.push_back(v);
         }
         if (std::abs(ecc - result.diameter) < 1e-9) {
-            result.diametrical.push_back(v);
+            result.diametricalVertices.push_back(v);
         }
     }
     
     return result;
-}
 }
