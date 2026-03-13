@@ -7,9 +7,10 @@
 
 /// Eccentricity computation result
 struct EccentricityData {
-    std::map<int, double> eccentricities; 
+    std::map<int, double> eccentricities;
     std::vector<int> centerVertices;
     std::vector<int> diametricalVertices;
+    std::vector<std::vector<int>> diametricalPaths;
     double radius;
     double diameter;
 };

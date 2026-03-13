@@ -201,26 +201,39 @@ int main() {
                     std::cout << "[!] Generate a graph first\n";
                     break;
                 }
-                
+
                 std::cout << "\n--- Eccentricity Computation (Shimbell) ---\n";
                 GraphAnalyzer analyzer(*currentGraph);
                 auto result = analyzer.analyze();
-                
+
                 std::cout << "\nVertex Eccentricities:\n";
                 for (const auto& [vertex, ecc] : result.eccentricities) {
                     std::cout << "  v" << vertex << ": " << ecc << "\n";
                 }
-                
+
                 std::cout << "\nRadius:     " << result.radius << "\n";
                 std::cout << "Diameter:   " << result.diameter << "\n";
-                
+
                 std::cout << "Center:     ";
                 for (int v : result.centerVertices) std::cout << "v" << v << " ";
                 std::cout << "\n";
-                
-                std::cout << "Diametrical: ";
+
+                std::cout << "Diametrical vertices: ";
                 for (int v : result.diametricalVertices) std::cout << "v" << v << " ";
                 std::cout << "\n";
+
+                // Print all diametrical paths
+                if (!result.diametricalPaths.empty()) {
+                    std::cout << "\nDiametrical paths (" << result.diametricalPaths.size() << " total):\n";
+                    for (const auto& path : result.diametricalPaths) {
+                        std::cout << "  ";
+                        for (size_t j = 0; j < path.size(); ++j) {
+                            std::cout << "v" << path[j];
+                            if (j < path.size() - 1) std::cout << " -> ";
+                        }
+                        std::cout << "\n";
+                    }
+                }
                 break;
             }
             
@@ -254,38 +267,33 @@ int main() {
                     std::cout << "[!] Generate a graph first\n";
                     break;
                 }
-                
+
                 int startVertex = readInteger("\nStart vertex: ");
                 int endVertex = readInteger("End vertex: ");
-                
-                if (!currentGraph->hasVertex(startVertex) || 
+
+                if (!currentGraph->hasVertex(startVertex) ||
                     !currentGraph->hasVertex(endVertex)) {
                     std::cout << "[FAIL] Invalid vertices\n";
                     break;
                 }
-                
+
                 SimplePathFinder finder(*currentGraph);
                 auto allPaths = finder.findAllPaths(startVertex, endVertex);
-                
+
                 if (allPaths.empty()) {
                     std::cout << "[FAIL] No paths found\n";
                 } else {
                     std::cout << "[OK] Found " << allPaths.size() << " path(s)\n";
-                    
-                    // Display first 10 paths
-                    size_t limit = std::min(allPaths.size(), size_t(10));
+
+                    // Display ALL paths
                     std::cout << "Paths:\n";
-                    for (size_t i = 0; i < limit; ++i) {
+                    for (size_t i = 0; i < allPaths.size(); ++i) {
                         std::cout << "  ";
                         for (size_t j = 0; j < allPaths[i].size(); ++j) {
                             std::cout << "v" << allPaths[i][j];
                             if (j < allPaths[i].size() - 1) std::cout << " -> ";
                         }
                         std::cout << "\n";
-                    }
-                    
-                    if (allPaths.size() > 10) {
-                        std::cout << "  ... and " << (allPaths.size() - 10) << " more\n";
                     }
                 }
                 break;

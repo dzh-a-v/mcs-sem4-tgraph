@@ -13,5 +13,4 @@ add_executable(lab1
     src/PathCounter.cpp
     src/ShimbellMethod.cpp
     src/Eccentricity.cpp
-    src/EccentricityBF.cpp
 )

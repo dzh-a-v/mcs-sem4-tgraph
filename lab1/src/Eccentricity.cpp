@@ -1,6 +1,64 @@
 #include "include/Eccentricity.h"
+#include "include/PathCounter.h"
 #include <limits>
 #include <algorithm>
+#include <functional>
+
+/// Helper function to find all shortest paths between two vertices
+static std::vector<std::vector<int>> findAllShortestPaths(
+    int start,
+    int end,
+    const AdjacencyGraph& graph,
+    const std::map<std::pair<int,int>, double>& allShortest)
+{
+    std::vector<std::vector<int>> result;
+    constexpr double INF = std::numeric_limits<double>::infinity();
+
+    double targetDist = allShortest.at({start, end});
+    if (targetDist == INF || targetDist == 0) {
+        return result;
+    }
+
+    // Use DFS with pruning based on shortest path distances
+    std::vector<int> currentPath;
+    currentPath.push_back(start);
+
+    std::function<void(int)> dfs = [&](int current) {
+        if (current == end) {
+            result.push_back(currentPath);
+            return;
+        }
+
+        for (const auto& [neighbor, weight] : graph.neighbors(current)) {
+            // Check if this edge is on a shortest path
+            double distToNeighbor = allShortest.at({start, neighbor});
+            double distFromNeighborToEnd = allShortest.at({neighbor, end});
+
+            // Avoid cycles
+            if (std::find(currentPath.begin(), currentPath.end(), neighbor) != currentPath.end()) {
+                continue;
+            }
+
+            // Check if going through this neighbor maintains shortest path property
+            if (distToNeighbor != INF && distFromNeighborToEnd != INF) {
+                double pathThroughNeighbor = distToNeighbor + distFromNeighborToEnd;
+                if (std::abs(pathThroughNeighbor - targetDist) < 1e-9) {
+                    // Check if the edge weight matches the distance increment
+                    double expectedWeight = distToNeighbor - allShortest.at({start, current});
+                    if (std::abs(weight - expectedWeight) < 1e-9 ||
+                        std::abs(allShortest.at({start, current}) + weight - distToNeighbor) < 1e-9) {
+                        currentPath.push_back(neighbor);
+                        dfs(neighbor);
+                        currentPath.pop_back();
+                    }
+                }
+            }
+        }
+    };
+
+    dfs(start);
+    return result;
+}
 
 GraphAnalyzer::GraphAnalyzer(const AdjacencyGraph& graph)
     : m_graph(graph)
@@ -49,18 +107,18 @@ std::map<std::pair<int,int>, double> GraphAnalyzer::computeAllShortestPaths() co
 EccentricityData GraphAnalyzer::analyze() {
     EccentricityData result;
     constexpr double INF = std::numeric_limits<double>::infinity();
-    
+
     result.radius = INF;
     result.diameter = -INF;
-    
+
     auto vertices = m_graph.vertexIds();
-    
+
     auto allShortest = computeAllShortestPaths();
-    
+
     for (int v : vertices) {
         double ecc = 0.0;
         bool hasReachable = false;
-        
+
         for (int u : vertices) {
             if (u != v) {
                 double dist = allShortest[{v, u}];
@@ -70,12 +128,12 @@ EccentricityData GraphAnalyzer::analyze() {
                 }
             }
         }
-        
+
         result.eccentricities[v] = hasReachable ? ecc : 0.0; // FtF
         result.radius = std::min(result.radius, result.eccentricities[v]);
         result.diameter = std::max(result.diameter, result.eccentricities[v]);
     }
-    
+
     for (const auto& [v, ecc] : result.eccentricities) {
         if (std::abs(ecc - result.radius) < 1e-9) {
             result.centerVertices.push_back(v);
@@ -84,6 +142,23 @@ EccentricityData GraphAnalyzer::analyze() {
             result.diametricalVertices.push_back(v);
         }
     }
-    
+
+    // Find all diametrical paths (shortest paths with length = diameter)
+    for (int start : vertices) {
+        for (int end : vertices) {
+            if (start != end) {
+                double dist = allShortest[{start, end}];
+                if (std::abs(dist - result.diameter) < 1e-9) {
+                    auto paths = findAllShortestPaths(start, end, m_graph, allShortest);
+                    result.diametricalPaths.insert(
+                        result.diametricalPaths.end(),
+                        paths.begin(),
+                        paths.end()
+                    );
+                }
+            }
+        }
+    }
+
     return result;
 }
