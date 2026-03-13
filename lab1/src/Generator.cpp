@@ -23,8 +23,7 @@ BinomialProperties AcyclicGraphBuilder::getBinomialProperties(int n, double p) {
     return props;
 }
 // ребра не вводим в инпут, они генерируются на основе степеней автоматически
-// указывать диаметральный путь
-// выводить все пути)
+
 DegreeStatistics AcyclicGraphBuilder::computeDegreeStatistics(const AdjacencyGraph& graph) {
     DegreeStatistics stats{};
     auto vertices = graph.vertexIds();
@@ -154,7 +153,6 @@ static bool checkConnected(const AdjacencyGraph& graph, int vertexCount, bool di
 // Try to build graph with given degree targets
 static std::unique_ptr<AdjacencyGraph> tryBuildGraph(
     int vertexCount,
-    int targetEdges,
     bool directed,
     WeightSign weightSign,
     const std::vector<int>& degreeTargets,
@@ -171,11 +169,20 @@ static std::unique_ptr<AdjacencyGraph> tryBuildGraph(
     std::set<std::pair<int, int>> addedEdges;
 
     int edgesAdded = 0;
-    
+
+    // Calculate target edges from degree targets (sum of degrees / 2 for undirected)
+    int sumDegrees = 0;
+    for (int deg : degreeTargets) {
+        sumDegrees += deg;
+    }
+    // For undirected: edges = sum(degrees) / 2
+    // For directed: edges = sum(degrees) (each edge contributes to out-degree only)
+    int targetEdges = directed ? sumDegrees : sumDegrees / 2;
+
     // Calculate max possible edges for acyclic graph (u < v constraint)
     int maxPossibleEdges = vertexCount * (vertexCount - 1) / 2;
     int actualTargetEdges = std::min(targetEdges, maxPossibleEdges);
-    
+
     // Base attempts on actual possible edges, not requested edges
     int attempts = 0;
     const int maxAttempts = actualTargetEdges * 100 + 1000;
@@ -192,7 +199,7 @@ static std::unique_ptr<AdjacencyGraph> tryBuildGraph(
         // But don't let them block us if we still need more edges
         bool uBlocked = (degreeTargets[u] > 0 && currentDegree[u] >= degreeTargets[u]);
         bool vBlocked = (degreeTargets[v] > 0 && currentDegree[v] >= degreeTargets[v]);
-        
+
         // Skip only if BOTH vertices are at their degree limit
         // This allows flexibility to reach targetEdges
         if (uBlocked && vBlocked) continue;
@@ -216,8 +223,8 @@ static std::unique_ptr<AdjacencyGraph> tryBuildGraph(
     }
 
     if (edgesAdded < actualTargetEdges) {
-        std::cout << "[!] Warning: Could only add " << edgesAdded 
-                  << " edges (max possible for " << vertexCount 
+        std::cout << "[!] Warning: Could only add " << edgesAdded
+                  << " edges (max possible for " << vertexCount
                   << " vertices: " << maxPossibleEdges << ")\n";
     }
 
@@ -225,18 +232,17 @@ static std::unique_ptr<AdjacencyGraph> tryBuildGraph(
 }
 
 std::unique_ptr<AdjacencyGraph> AcyclicGraphBuilder::generateAcyclicGraph(
-    int vertexCount, 
-    int targetEdges, 
-    bool directed, 
-    WeightSign weightSign) 
+    int vertexCount,
+    bool directed,
+    WeightSign weightSign)
 {
     const int maxRegenerations = 50;
-    
+
     for (int attempt = 1; attempt <= maxRegenerations; ++attempt) {
         // Step 1: Generate ALL vertex degrees using binomial distribution
         std::vector<int> degreeTargets(vertexCount);
         int totalDegree = 0;
-        
+
         for (int i = 0; i < vertexCount; ++i) {
             degreeTargets[i] = std::min(
                 sampleBinomial(BINOMIAL_N_DEGREE, BINOMIAL_P_DEGREE),
@@ -244,7 +250,7 @@ std::unique_ptr<AdjacencyGraph> AcyclicGraphBuilder::generateAcyclicGraph(
             );
             totalDegree += degreeTargets[i];
         }
-        
+
         // Fix parity for undirected graphs (handshaking lemma)
         if (!directed && totalDegree % 2 != 0) {
             for (int i = 0; i < vertexCount && totalDegree % 2 != 0; ++i) {
@@ -254,27 +260,27 @@ std::unique_ptr<AdjacencyGraph> AcyclicGraphBuilder::generateAcyclicGraph(
                 }
             }
         }
-        
+
         // Step 2: Build graph based on degree targets
-        auto graph = tryBuildGraph(vertexCount, targetEdges, directed, weightSign, 
+        auto graph = tryBuildGraph(vertexCount, directed, weightSign,
                                    degreeTargets, m_rng, *this);
-        
+
         // Step 3: Check if connected (weak connectivity for directed)
         if (checkConnected(*graph, vertexCount, directed)) {
             // Success! Return connected graph
             return graph;
         }
-        
+
         // Step 4: Not connected → discard EVERYTHING and regenerate
         // (both degrees AND edges)
         // Loop continues to next attempt
     }
-    
+
     // After max attempts, return last attempt
-    std::cout << "[!] Warning: Graph may be disconnected after " 
+    std::cout << "[!] Warning: Graph may be disconnected after "
               << maxRegenerations << " regeneration attempts\n";
     std::cout << "    Try: more edges, or different binomial parameters (n, p)\n";
-    
+
     // One final attempt
     std::vector<int> degreeTargets(vertexCount);
     for (int i = 0; i < vertexCount; ++i) {
@@ -283,7 +289,7 @@ std::unique_ptr<AdjacencyGraph> AcyclicGraphBuilder::generateAcyclicGraph(
             vertexCount - 1
         );
     }
-    
-    return tryBuildGraph(vertexCount, targetEdges, directed, weightSign,
+
+    return tryBuildGraph(vertexCount, directed, weightSign,
                          degreeTargets, m_rng, *this);
 }

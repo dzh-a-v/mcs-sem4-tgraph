@@ -50,7 +50,6 @@ class AcyclicGraphBuilder {
 public:
     std::unique_ptr<AdjacencyGraph> generateAcyclicGraph(
         int vertices,
-        int edges,
         bool directed,
         WeightSign weightSign = WeightSign::Positive);
 

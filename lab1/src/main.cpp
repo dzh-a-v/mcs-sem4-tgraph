@@ -166,8 +166,7 @@ int main() {
             {
                 std::cout << "\n--- Graph Generation ---\n";
                 int numVertices = readInteger("Number of vertices: ");
-                int numEdges = readInteger("Number of edges: ");
-                
+
                 std::cout << "Graph type (1=Directed, 2=Undirected): ";
                 int typeOption;
                 while (!(std::cin >> typeOption) || typeOption < 1 || typeOption > 2) {
@@ -176,19 +175,19 @@ int main() {
                     std::cout << "Invalid. Enter 1 or 2: ";
                 }
                 bool isDirected = (typeOption == 1);
-                
+
                 WeightSign wSign = selectWeightSign();
-                
+
                 AcyclicGraphBuilder builder;
                 currentGraph = builder.generateAcyclicGraph(
-                    numVertices, numEdges, isDirected, wSign);
-                
+                    numVertices, isDirected, wSign);
+
                 std::cout << "\n[OK] Graph created successfully!\n";
                 std::cout << "    Vertices: " << numVertices << "\n";
                 std::cout << "    Edges:    " << currentGraph->edges().size() << "\n";
                 std::cout << "    Degree params:  n=" << BINOMIAL_N_DEGREE << ", p=" << BINOMIAL_P_DEGREE << "\n";
                 std::cout << "    Weight params:  n=" << BINOMIAL_N_WEIGHT << ", p=" << BINOMIAL_P_WEIGHT << "\n";
-                
+
                 showDistributionInfo();
                 showGraphStats(currentGraph);
                 break;
