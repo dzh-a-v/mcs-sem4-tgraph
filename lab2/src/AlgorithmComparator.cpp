@@ -9,7 +9,7 @@ AlgorithmComparison AlgorithmComparator::compare(int startVertex) {
     
     // Run BFS
     BreadthFirstSearch bfs(m_graph);
-    BFSResult bfsResult = bfs.traverse(startVertex);
+    BFSResult bfsResult = bfs.traverseWithLevels(startVertex);
     result.bfsIterations = bfsResult.iterations;
     
     // Run Dijkstra

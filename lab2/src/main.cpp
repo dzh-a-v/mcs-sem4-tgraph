@@ -375,15 +375,22 @@ int main() {
                 }
 
                 BreadthFirstSearch bfs(*currentGraph);
-                BFSResult result = bfs.traverse(startVertex);
+                BFSResult result = bfs.traverseWithLevels(startVertex);
 
                 std::cout << "\n[OK] BFS completed in " << result.iterations << " iterations\n";
-                std::cout << "Traversal order: ";
-                for (size_t i = 0; i < result.traversalOrder.size(); ++i) {
-                    std::cout << "v" << result.traversalOrder[i];
-                    if (i < result.traversalOrder.size() - 1) std::cout << " -> ";
+                std::cout << "Maximum depth (levels): " << result.maxLevel << "\n";
+
+                // Display levels
+                std::cout << "\n--- BFS Levels ---\n";
+                for (int level = 0; level <= result.maxLevel; ++level) {
+                    std::cout << "Level " << level << ": [";
+                    const auto& vertices = result.levels.at(level);
+                    for (size_t i = 0; i < vertices.size(); ++i) {
+                        std::cout << vertices[i];
+                        if (i < vertices.size() - 1) std::cout << ", ";
+                    }
+                    std::cout << "]\n";
                 }
-                std::cout << "\n";
 
                 // Check if graph is fully connected
                 if (result.traversalOrder.size() < static_cast<size_t>(currentGraph->size())) {

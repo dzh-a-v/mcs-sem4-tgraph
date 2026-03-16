@@ -7,9 +7,10 @@ BreadthFirstSearch::BreadthFirstSearch(const AdjacencyGraph& graph)
     : m_graph(graph)
 {}
 
-BFSResult BreadthFirstSearch::traverse(int startVertex) {
+BFSResult BreadthFirstSearch::traverseWithLevels(int startVertex) {
     BFSResult result;
     result.iterations = 0;
+    result.maxLevel = 0;
     
     if (!m_graph.hasVertex(startVertex)) {
         return result;
@@ -24,8 +25,9 @@ BFSResult BreadthFirstSearch::traverse(int startVertex) {
         idToIndexMap[i] = vertexIds[i];
     }
     
-    std::queue<int> queue;
-    queue.push(startVertex);
+    // Queue stores {vertex, level}
+    std::queue<std::pair<int, int>> queue;
+    queue.push({startVertex, 0});
     
     // Find index for startVertex
     int startIndex = -1;
@@ -43,11 +45,13 @@ BFSResult BreadthFirstSearch::traverse(int startVertex) {
     visited[startIndex] = true;
     
     while (!queue.empty()) {
-        int current = queue.front();
+        auto [current, level] = queue.front();
         queue.pop();
         
         result.traversalOrder.push_back(current);
+        result.levels[level].push_back(current);
         result.iterations++;
+        result.maxLevel = std::max(result.maxLevel, level);
         
         // Visit all neighbors
         for (const auto& [neighbor, weight] : m_graph.neighbors(current)) {
@@ -62,15 +66,10 @@ BFSResult BreadthFirstSearch::traverse(int startVertex) {
             
             if (neighborIndex != -1 && !visited[neighborIndex]) {
                 visited[neighborIndex] = true;
-                queue.push(neighbor);
+                queue.push({neighbor, level + 1});
             }
         }
     }
     
     return result;
-}
-
-BFSResult BreadthFirstSearch::traverseLevels(int startVertex) {
-    // Same as traverse, but can be extended to show levels
-    return traverse(startVertex);
 }
