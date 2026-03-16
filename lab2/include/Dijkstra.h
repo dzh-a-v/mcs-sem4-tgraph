@@ -7,10 +7,10 @@
 /// Result of Dijkstra's algorithm
 struct DijkstraResult {
     std::map<int, double> distances;      // Shortest distances from start
-    std::map<int, int> predecessors;       // For path reconstruction
-    std::vector<int> shortestPath;         // Reconstructed path to target
-    double targetDistance;                 // Distance to target vertex
-    int iterations;                        // Number of iterations for comparison
+    std::map<int, int> predecessors;// For path reconstruction
+    std::vector<int> shortestPath; // Reconstructed path to target
+    double targetDistance; // Distance to target vertex
+    int iterations; // Number of iterations for comparison
 };
 
 class DijkstraAlgorithm {

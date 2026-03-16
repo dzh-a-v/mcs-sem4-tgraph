@@ -393,11 +393,13 @@ int main() {
                 }
 
                 // Check if graph is fully connected
+                /*
                 if (result.traversalOrder.size() < static_cast<size_t>(currentGraph->size())) {
                     std::cout << "\n[!] Warning: Graph may be disconnected\n";
                     std::cout << "    Visited " << result.traversalOrder.size() 
                               << " of " << currentGraph->size() << " vertices\n";
                 }
+                              */
                 break;
             }
 
@@ -472,10 +474,11 @@ int main() {
                 std::cout << "Dijkstra iterations:  " << comparison.dijkstraIterations << "\n";
                 
                 if (comparison.bfsIterations > 0) {
-                    std::cout << "Speedup factor:       " << std::fixed << std::setprecision(2) 
-                              << comparison.speedupFactor << "x (BFS is faster)\n";
+                    std::cout << "BFS is " << std::fixed << std::setprecision(2) 
+                              << comparison.speedupFactor << "x times faster than Dijkstra.\n";
                 }
 
+                /*
                 std::cout << "\n--- Analysis ---\n";
                 if (comparison.bfsIterations < comparison.dijkstraIterations) {
                     std::cout << "BFS is faster for simple traversal (no weights).\n";
@@ -485,6 +488,7 @@ int main() {
                 } else {
                     std::cout << "Both algorithms required the same number of iterations.\n";
                 }
+                */
                 break;
             }
 
