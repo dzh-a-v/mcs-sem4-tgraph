@@ -20,7 +20,8 @@ BFSResult BreadthFirstSearch::traverseWithLevels(int startVertex) {
     std::vector<int> vertexIds = m_graph.vertexIds();
     std::vector<bool> visited(m_graph.size(), false);
 
-    // Build hash map for O(1) vertex ID to index lookup
+    // Build hash map for O(1) vertex ID to index lookup. FTF (now no need,
+    // rn all the verteces are indexed from 0 to the last vertex.
     std::unordered_map<int, int> idToIndex;
     for (int i = 0; i < m_graph.size(); ++i) {
         result.iterations++;
@@ -30,7 +31,7 @@ BFSResult BreadthFirstSearch::traverseWithLevels(int startVertex) {
     // Queue stores {vertex, level}
     std::queue<std::pair<int, int>> queue;
     queue.push({startVertex, 0});
-    result.iterations++;  // Count: queue push (O(1) operation)
+    //result.iterations++;
 
     int startIndex = idToIndex[startVertex];
 
@@ -49,22 +50,26 @@ BFSResult BreadthFirstSearch::traverseWithLevels(int startVertex) {
 
         result.maxLevel = std::max(result.maxLevel, level);
 
-        // Visit all neighbors
-        for (const auto& [neighbor, weight] : m_graph.neighbors(current)) {
+        // I generated it with qwen coder
+        /// Visit all neighbors
+        for (const auto& [neighbor, weight] : m_graph.neighbors(current)) { // loop
+            //through all vertices connected to current + unpacking edge (connected
+            // vertex + weight)
             result.iterations++;
 
             // O(1) lookup using hash map
-            auto it = idToIndex.find(neighbor);
-            if (it != idToIndex.end()) {
-                int neighborIndex = it->second;
-                if (!visited[neighborIndex]) {
-                    visited[neighborIndex] = true;
-                    result.traversalOrder.push_back(neighbor);
-                    result.levels[level + 1].push_back(neighbor);
-                    queue.push({neighbor, level + 1});
-                    result.iterations++;  // Count: queue push (O(1) operation)
+            auto it = idToIndex.find(neighbor); // find the index of this neighbor vertex
+            // (also FTF)
+            //if (it != idToIndex.end()) { // i don't need it actually
+                int neighborIndex = it->second; // 
+                if (!visited[neighborIndex]) { // haven't we visited it yet
+                    visited[neighborIndex] = true; // marking as visited not to process again
+                    result.traversalOrder.push_back(neighbor); // add to the order of vis. ver.
+                    result.levels[level + 1].push_back(neighbor); // next depth
+                    queue.push({neighbor, level + 1}); // we will process its neighbors lager
+                    result.iterations++;
                 }
-            }
+            //}
         }
     }
 

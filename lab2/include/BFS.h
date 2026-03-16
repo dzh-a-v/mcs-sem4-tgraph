@@ -5,11 +5,11 @@
 
 /// Result of BFS traversal with level information
 struct BFSResult {
-    std::vector<int> traversalOrder;      // Order of visited vertices
-    std::map<int, std::vector<int>> levels; // Vertices grouped by level
-    int iterations;                        // Number of vertices processed
-    int edgeVisits;                        // Number of edge examinations
-    int maxLevel;                          // Maximum depth reached
+    std::vector<int> traversalOrder; // Order of visited vertices
+    std::map<int, std::vector<int>> levels;
+    int iterations;  /// Number of vertices processed
+    // int edgeVisits;  // Number of edge examinations
+    int maxLevel;    // Maximum depth reached
 };
 
 class BreadthFirstSearch {
