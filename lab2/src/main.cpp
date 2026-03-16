@@ -6,6 +6,9 @@
 #include "include/ShimbellMethod.h"
 #include "include/PathCounter.h"
 #include "include/Eccentricity.h"
+#include "include/BFS.h"
+#include "include/Dijkstra.h"
+#include "include/AlgorithmComparator.h"
 
 // ============================================================================
 // Helper Functions
@@ -21,6 +24,10 @@ void showMenu() {
     std::cout << "  6. Compare distribution statistics\n";
     std::cout << "  7. Show adjacency matrix\n";
     std::cout << "  8. Show weight matrix (Shimbell k=1)\n";
+    std::cout << "\n  --- Lab 2 ---\n";
+    std::cout << "  9. BFS traversal\n";
+    std::cout << "  10. Dijkstra's shortest path\n";
+    std::cout << "  11. Compare BFS vs Dijkstra (speed)\n";
     std::cout << "  0. Quit\n";
     std::cout << "===============================\n";
     std::cout << "> ";
@@ -347,6 +354,129 @@ int main() {
                     printWeightTable(std::cout, result.minWeights, vertexIds);
                 } catch (const std::exception& ex) {
                     std::cout << "[ERROR] " << ex.what() << "\n";
+                }
+                break;
+            }
+
+            // =========================================================
+            case 9:  // BFS Traversal (Lab 2)
+            {
+                if (!currentGraph) {
+                    std::cout << "[!] Generate a graph first\n";
+                    break;
+                }
+
+                std::cout << "\n--- BFS Traversal ---\n";
+                int startVertex = readInteger("Start vertex: ");
+
+                if (!currentGraph->hasVertex(startVertex)) {
+                    std::cout << "[!] Invalid vertex\n";
+                    break;
+                }
+
+                BreadthFirstSearch bfs(*currentGraph);
+                BFSResult result = bfs.traverse(startVertex);
+
+                std::cout << "\n[OK] BFS completed in " << result.iterations << " iterations\n";
+                std::cout << "Traversal order: ";
+                for (size_t i = 0; i < result.traversalOrder.size(); ++i) {
+                    std::cout << "v" << result.traversalOrder[i];
+                    if (i < result.traversalOrder.size() - 1) std::cout << " -> ";
+                }
+                std::cout << "\n";
+
+                // Check if graph is fully connected
+                if (result.traversalOrder.size() < static_cast<size_t>(currentGraph->size())) {
+                    std::cout << "\n[!] Warning: Graph may be disconnected\n";
+                    std::cout << "    Visited " << result.traversalOrder.size() 
+                              << " of " << currentGraph->size() << " vertices\n";
+                }
+                break;
+            }
+
+            // =========================================================
+            case 10:  // Dijkstra's Algorithm (Lab 2)
+            {
+                if (!currentGraph) {
+                    std::cout << "[!] Generate a graph first\n";
+                    break;
+                }
+
+                std::cout << "\n--- Dijkstra's Shortest Path ---\n";
+                int startVertex = readInteger("Start vertex: ");
+                int endVertex = readInteger("End vertex: ");
+
+                if (!currentGraph->hasVertex(startVertex) ||
+                    !currentGraph->hasVertex(endVertex)) {
+                    std::cout << "[!] Invalid vertices\n";
+                    break;
+                }
+
+                DijkstraAlgorithm dijkstra(*currentGraph);
+                DijkstraResult result = dijkstra.findShortestPaths(startVertex, endVertex);
+
+                std::cout << "\n[OK] Dijkstra completed in " << result.iterations << " iterations\n";
+
+                if (result.shortestPath.empty() || result.targetDistance == std::numeric_limits<double>::infinity()) {
+                    std::cout << "[!] No path found from v" << startVertex << " to v" << endVertex << "\n";
+                } else {
+                    std::cout << "Shortest distance: " << result.targetDistance << "\n";
+                    std::cout << "Path: ";
+                    for (size_t i = 0; i < result.shortestPath.size(); ++i) {
+                        std::cout << "v" << result.shortestPath[i];
+                        if (i < result.shortestPath.size() - 1) std::cout << " -> ";
+                    }
+                    std::cout << "\n";
+                }
+
+                // Show distance vector
+                std::cout << "\n--- Distance Vector from v" << startVertex << " ---\n";
+                for (const auto& [vertex, dist] : result.distances) {
+                    if (dist == std::numeric_limits<double>::infinity()) {
+                        std::cout << "  v" << vertex << ": unreachable\n";
+                    } else {
+                        std::cout << "  v" << vertex << ": " << dist << "\n";
+                    }
+                }
+                break;
+            }
+
+            // =========================================================
+            case 11:  // Compare BFS vs Dijkstra (Lab 2)
+            {
+                if (!currentGraph) {
+                    std::cout << "[!] Generate a graph first\n";
+                    break;
+                }
+
+                std::cout << "\n--- Algorithm Speed Comparison ---\n";
+                int startVertex = readInteger("Start vertex: ");
+
+                if (!currentGraph->hasVertex(startVertex)) {
+                    std::cout << "[!] Invalid vertex\n";
+                    break;
+                }
+
+                AlgorithmComparator comparator(*currentGraph);
+                AlgorithmComparison comparison = comparator.compare(startVertex);
+
+                std::cout << "\n=== Comparison Results ===\n";
+                std::cout << "BFS iterations:       " << comparison.bfsIterations << "\n";
+                std::cout << "Dijkstra iterations:  " << comparison.dijkstraIterations << "\n";
+                
+                if (comparison.bfsIterations > 0) {
+                    std::cout << "Speedup factor:       " << std::fixed << std::setprecision(2) 
+                              << comparison.speedupFactor << "x (BFS is faster)\n";
+                }
+
+                std::cout << "\n--- Analysis ---\n";
+                if (comparison.bfsIterations < comparison.dijkstraIterations) {
+                    std::cout << "BFS is faster for simple traversal (no weights).\n";
+                    std::cout << "Dijkstra requires more iterations due to priority queue operations.\n";
+                } else if (comparison.bfsIterations > comparison.dijkstraIterations) {
+                    std::cout << "Unusual: Dijkstra appears faster. This may occur on sparse graphs.\n";
+                } else {
+                    std::cout << "Both algorithms required the same number of iterations.\n";
                 }
                 break;
             }
