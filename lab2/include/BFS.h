@@ -7,7 +7,8 @@
 struct BFSResult {
     std::vector<int> traversalOrder;      // Order of visited vertices
     std::map<int, std::vector<int>> levels; // Vertices grouped by level
-    int iterations;                        // Number of iterations for comparison
+    int iterations;                        // Number of vertices processed
+    int edgeVisits;                        // Number of edge examinations
     int maxLevel;                          // Maximum depth reached
 };
 

@@ -30,22 +30,24 @@ DijkstraResult DijkstraAlgorithm::findShortestPaths(int startVertex, std::option
     // Set of unvisited vertices (ordered by distance)
     std::set<std::pair<double, int>> unvisited;
     unvisited.insert({0.0, startVertex});
-    
+    result.iterations++;  // Count: inserting start vertex
+
     // Track which vertices have been finalized
     std::vector<bool> finalized(vertexCount, false);
-    
+
     // Map vertex ID to index
     std::vector<int> idToIndex(vertexCount);
     for (int i = 0; i < vertexCount; ++i) {
         idToIndex[i] = vertexIds[i];
     }
-    
+
     while (!unvisited.empty()) {
         // Get vertex with minimum distance
         auto it = unvisited.begin();
         int current = it->second;
         unvisited.erase(it);
-        
+        result.iterations++;  // Count: extracting vertex from priority queue
+
         // Find index for current vertex
         int currentIndex = -1;
         for (int i = 0; i < vertexCount; ++i) {
@@ -54,23 +56,28 @@ DijkstraResult DijkstraAlgorithm::findShortestPaths(int startVertex, std::option
                 break;
             }
         }
-        
-        if (currentIndex == -1 || finalized[currentIndex]) {
+
+        if (currentIndex == -1) {
             continue;
         }
-        
+
+        if (finalized[currentIndex]) {
+            continue;
+        }
+
         finalized[currentIndex] = true;
-        result.iterations++;
-        
+
         // If we reached the target, we can stop (optional optimization)
         if (targetVertex.has_value() && current == targetVertex.value()) {
             result.targetDistance = result.distances[current];
             result.shortestPath = reconstructPath(startVertex, current, result.predecessors);
             return result;
         }
-        
-        // Relax edges
+
+        // Relax edges - count each edge examination
         for (const auto& [neighbor, weight] : m_graph.neighbors(current)) {
+            result.iterations++;  // Count: examining an edge
+
             // Find index for neighbor
             int neighborIndex = -1;
             for (int i = 0; i < vertexCount; ++i) {
@@ -79,17 +86,18 @@ DijkstraResult DijkstraAlgorithm::findShortestPaths(int startVertex, std::option
                     break;
                 }
             }
-            
+
             if (neighborIndex == -1 || finalized[neighborIndex]) {
                 continue;
             }
-            
+
             double newDist = result.distances[current] + weight;
-            
+
             if (newDist < result.distances[neighbor]) {
                 result.distances[neighbor] = newDist;
                 result.predecessors[neighbor] = current;
                 unvisited.insert({newDist, neighbor});
+                result.iterations++;  // Count: updating distance (relaxation)
             }
         }
     }

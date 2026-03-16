@@ -43,18 +43,21 @@ BFSResult BreadthFirstSearch::traverseWithLevels(int startVertex) {
     }
     
     visited[startIndex] = true;
-    
+    result.iterations++;  // Count: processing start vertex
+    result.traversalOrder.push_back(startVertex);
+    result.levels[0].push_back(startVertex);
+
     while (!queue.empty()) {
         auto [current, level] = queue.front();
         queue.pop();
-        
-        result.traversalOrder.push_back(current);
-        result.levels[level].push_back(current);
-        result.iterations++;
+
+        result.iterations++;  // Count: extracting vertex from queue
         result.maxLevel = std::max(result.maxLevel, level);
-        
-        // Visit all neighbors
+
+        // Visit all neighbors - count each edge examination
         for (const auto& [neighbor, weight] : m_graph.neighbors(current)) {
+            result.iterations++;  // Count: examining an edge
+
             // Find index for neighbor
             int neighborIndex = -1;
             for (size_t i = 0; i < vertexIds.size(); ++i) {
@@ -63,9 +66,11 @@ BFSResult BreadthFirstSearch::traverseWithLevels(int startVertex) {
                     break;
                 }
             }
-            
+
             if (neighborIndex != -1 && !visited[neighborIndex]) {
                 visited[neighborIndex] = true;
+                result.traversalOrder.push_back(neighbor);
+                result.levels[level + 1].push_back(neighbor);
                 queue.push({neighbor, level + 1});
             }
         }

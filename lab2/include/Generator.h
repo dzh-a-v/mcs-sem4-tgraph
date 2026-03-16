@@ -2,11 +2,11 @@
 #include "include/Graph.h"
 #include <random>
 
-constexpr int BINOMIAL_N_DEGREE = 10;
-constexpr double BINOMIAL_P_DEGREE = 0.3;
+constexpr int BINOMIAL_N_DEGREE = 15;
+constexpr double BINOMIAL_P_DEGREE = 0.5;
 
-constexpr int BINOMIAL_N_WEIGHT = 10;
-constexpr double BINOMIAL_P_WEIGHT = 0.3;
+constexpr int BINOMIAL_N_WEIGHT = 15;
+constexpr double BINOMIAL_P_WEIGHT = 0.5;
 
 /* 
 Я всё ещё путаюсь, что это вообще такое :Р поэтому это мне шпаргалка.
