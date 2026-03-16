@@ -253,16 +253,16 @@ int main() {
                 
                 int k = readInteger("\nPath length k (number of edges): ");
                 
-                try {
+                //try {
                     KPathCalculator calculator(*currentGraph);
                     auto result = calculator.compute(k);
                     
                     auto vertexIds = currentGraph->vertexIds();
                     displayMatrix("Minimum Weight Paths", result.minWeights, vertexIds);
                     displayMatrix("Maximum Weight Paths", result.maxWeights, vertexIds);
-                } catch (const std::exception& ex) {
-                    std::cout << "[ERROR] " << ex.what() << "\n";
-                }
+                //} catch (const std::exception& ex) { // i don't need it for now. FTF
+                //    std::cout << "[ERROR] " << ex.what() << "\n";
+                //}
                 break;
             }
             
