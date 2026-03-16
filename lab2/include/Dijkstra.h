@@ -25,6 +25,7 @@ private:
     const AdjacencyGraph& m_graph;
     
     /// Reconstruct path from start to target using predecessors
-    std::vector<int> reconstructPath(int startVertex, int targetVertex, 
-                                      const std::map<int, int>& predecessors) const;
+    std::vector<int> reconstructPath(int startVertex, int targetVertex,
+                                      const std::vector<int>& H,
+                                      const std::vector<int>& vertexIds) const;
 };
