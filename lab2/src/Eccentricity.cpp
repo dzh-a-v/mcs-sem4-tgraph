@@ -129,9 +129,13 @@ EccentricityData GraphAnalyzer::analyze() {
             }
         }
 
-        result.eccentricities[v] = hasReachable ? ecc : 0.0; // FtF
-        result.radius = std::min(result.radius, result.eccentricities[v]);
-        result.diameter = std::max(result.diameter, result.eccentricities[v]);
+        result.eccentricities[v] = hasReachable ? ecc : INF;
+        
+        // Only consider vertices with finite eccentricity for radius/diameter
+        if (result.eccentricities[v] != INF) {
+            result.radius = std::min(result.radius, result.eccentricities[v]);
+            result.diameter = std::max(result.diameter, result.eccentricities[v]);
+        }
     }
 
     for (const auto& [v, ecc] : result.eccentricities) {
