@@ -50,7 +50,7 @@ DijkstraResult DijkstraAlgorithm::findShortestPaths(int startVertex, std::option
 
     // Label M: update labels
     while (true) {
-        result.iterations++;  // Count: main loop iteration
+        //result.iterations++;  // Count: main loop iteration
 
         // for u ∈ Γ(v) do -- examine all neighbors of v
         for (const auto& [neighbor, weight] : m_graph.neighbors(v)) {
