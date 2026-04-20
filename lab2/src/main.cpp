@@ -265,6 +265,8 @@ int main() {
                     KPathCalculator calculator(*currentGraph);
                     auto result = calculator.compute(k);
                     
+                    std::cout << "\n[DEBUG] Requested k = " << k << ", Got edgeCount = " << result.edgeCount << "\n";
+                    
                     auto vertexIds = currentGraph->vertexIds();
                     displayMatrix("Minimum Weight Paths", result.minWeights, vertexIds);
                     displayMatrix("Maximum Weight Paths", result.maxWeights, vertexIds);

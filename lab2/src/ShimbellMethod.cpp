@@ -16,22 +16,34 @@ ShimbellOutput KPathCalculator::compute(int edgeCount) {
     }
     
     // Initialize with weight matrix (k=1)
-    WeightTable minMatrix = buildWeightMatrix();
-    WeightTable maxMatrix = buildWeightMatrix();
+    WeightTable baseMatrix = buildWeightMatrix();
     
-    // Base case: already have k=1
+    // Base case: k=1
     if (edgeCount == 1) {
-        return {minMatrix, maxMatrix, 1};
+        // Add diagonal = 0 for k=1 results
+        for (int i = 0; i < m_vertexCount; ++i) {
+            baseMatrix[i][i] = 0.0;
+        }
+        return {baseMatrix, baseMatrix, 1};
     }
     
-    // Store base for repeated multiplication
-    WeightTable baseMin = minMatrix;
-    WeightTable baseMax = maxMatrix;
+    // For k > 1, compute A^k by multiplying A^(k-1) * A^1 step by step
+    // Each iteration produces paths with EXACTLY that many edges
+    WeightTable minMatrix = baseMatrix;
+    WeightTable maxMatrix = baseMatrix;
     
-    // Iteratively compute A^k
     for (int step = 2; step <= edgeCount; ++step) {
-        minMatrix = multiplyMinPlus(minMatrix, baseMin);
-        maxMatrix = multiplyMaxPlus(maxMatrix, baseMax);
+        // minMatrix currently contains paths with exactly (step-1) edges
+        // Multiply by baseMatrix (which has paths with exactly 1 edge)
+        // Result has paths with exactly step edges
+        minMatrix = multiplyMinPlus(minMatrix, baseMatrix);
+        maxMatrix = multiplyMaxPlus(maxMatrix, baseMatrix);
+    }
+    
+    // Add diagonal = 0 for result
+    for (int i = 0; i < m_vertexCount; ++i) {
+        minMatrix[i][i] = 0.0;
+        maxMatrix[i][i] = 0.0;
     }
     
     return {minMatrix, maxMatrix, edgeCount};
@@ -40,18 +52,16 @@ ShimbellOutput KPathCalculator::compute(int edgeCount) {
 WeightTable KPathCalculator::buildWeightMatrix() const {
     const double INF_PLACEHOLDER = std::numeric_limits<double>::infinity();
     
-    // Initialize with infinity (nullopt)
+    // Initialize with nullopt (no path)
     WeightTable matrix(
         m_vertexCount, 
         std::vector<std::optional<double>>(m_vertexCount, std::nullopt)
     );
     
-    // Diagonal = 0 (self-loops)
-    for (int i = 0; i < m_vertexCount; ++i) {
-        matrix[i][i] = 0.0;
-    }
+    // Diagonal = nullopt (no self-loops for exact k-edge paths)
+    // This ensures we only find paths with EXACTLY k edges, not reusing old results
     
-    // Fill edge weights
+    // Fill edge weights (direct edges only)
     for (const auto& edge : m_graph.edges()) {
         int row = mapVertexToIndex(edge.from);
         int col = mapVertexToIndex(edge.to);
