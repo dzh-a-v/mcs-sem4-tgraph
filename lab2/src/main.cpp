@@ -228,16 +228,24 @@ int main() {
                 for (int v : result.diametricalVertices) std::cout << "v" << v << " ";
                 std::cout << "\n";
 
-                // Print all diametrical paths
-                if (!result.diametricalPaths.empty()) {
-                    std::cout << "\nDiametrical paths (" << result.diametricalPaths.size() << " total):\n";
-                    for (const auto& path : result.diametricalPaths) {
-                        std::cout << "  ";
-                        for (size_t j = 0; j < path.size(); ++j) {
-                            std::cout << "v" << path[j];
-                            if (j < path.size() - 1) std::cout << " -> ";
+                // Print all diametrical paths grouped by vertex pair
+                if (!result.diametricalPathsByPair.empty()) {
+                    size_t totalPaths = 0;
+                    for (const auto& [pair, paths] : result.diametricalPathsByPair) {
+                        totalPaths += paths.size();
+                    }
+                    std::cout << "\nDiametrical paths (" << totalPaths << " total):\n";
+                    
+                    for (const auto& [pair, paths] : result.diametricalPathsByPair) {
+                        std::cout << "\n  Between v" << pair.first << " and v" << pair.second << " (" << paths.size() << " paths):\n";
+                        for (const auto& path : paths) {
+                            std::cout << "    ";
+                            for (size_t j = 0; j < path.size(); ++j) {
+                                std::cout << "v" << path[j];
+                                if (j < path.size() - 1) std::cout << " -> ";
+                            }
+                            std::cout << "\n";
                         }
-                        std::cout << "\n";
                     }
                 }
                 break;

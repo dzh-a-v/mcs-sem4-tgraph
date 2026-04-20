@@ -10,7 +10,8 @@ struct EccentricityData {
     std::map<int, double> eccentricities;
     std::vector<int> centerVertices;
     std::vector<int> diametricalVertices;
-    std::vector<std::vector<int>> diametricalPaths;
+    // Maps unordered vertex pairs to their diametrical paths
+    std::map<std::pair<int, int>, std::vector<std::vector<int>>> diametricalPathsByPair;
     double radius;
     double diameter;
 };

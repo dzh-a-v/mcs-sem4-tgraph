@@ -3,6 +3,7 @@
 #include <limits>
 #include <algorithm>
 #include <functional>
+#include <set>
 
 /// Helper function to find all shortest paths between two vertices
 static std::vector<std::vector<int>> findAllShortestPaths(
@@ -147,20 +148,29 @@ EccentricityData GraphAnalyzer::analyze() {
         }
     }
 
-    // Find all diametrical paths (shortest paths with length = diameter)
+    // Find all diametrical pairs (unique unordered pairs at diameter distance)
+    // Store as ordered pairs (min, max) to avoid duplicates
+    std::set<std::pair<int, int>> diametricalPairs;
+    
     for (int start : vertices) {
         for (int end : vertices) {
             if (start != end) {
                 double dist = allShortest[{start, end}];
                 if (std::abs(dist - result.diameter) < 1e-9) {
-                    auto paths = findAllShortestPaths(start, end, m_graph, allShortest);
-                    result.diametricalPaths.insert(
-                        result.diametricalPaths.end(),
-                        paths.begin(),
-                        paths.end()
-                    );
+                    // Normalize pair: store as (min, max)
+                    int first = std::min(start, end);
+                    int second = std::max(start, end);
+                    diametricalPairs.insert({first, second});
                 }
             }
+        }
+    }
+    
+    // Find all diametrical paths for each unique pair
+    for (const auto& [v1, v2] : diametricalPairs) {
+        auto paths = findAllShortestPaths(v1, v2, m_graph, allShortest);
+        if (!paths.empty()) {
+            result.diametricalPathsByPair[{v1, v2}] = paths;
         }
     }
 
