@@ -126,6 +126,10 @@ EccentricityData GraphAnalyzer::analyze() {
         }
 
         // If no reachable vertices (end/sink vertex), set eccentricity to 0
+        // TO REVERT TO INFINITE ECCENTRICITY FOR END VERTICES:
+        // Change: result.eccentricities[v] = hasReachable ? ecc : 0;
+        // To:     result.eccentricities[v] = hasReachable ? ecc : -1;
+        // And update the radius/diameter check to: if (result.eccentricities[v] >= 0)
         result.eccentricities[v] = hasReachable ? ecc : 0;
         
         // Only consider vertices with non-negative eccentricity for radius/diameter

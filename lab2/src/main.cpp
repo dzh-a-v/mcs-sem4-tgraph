@@ -213,6 +213,15 @@ int main() {
                 auto result = analyzer.analyze();
 
                 std::cout << "\nVertex Eccentricities (in edges):\n";
+                // TO SHOW "unreachable" FOR END VERTICES:
+                // Replace the loop with:
+                // for (const auto& [vertex, ecc] : result.eccentricities) {
+                //     if (ecc >= 0) {
+                //         std::cout << "  v" << vertex << ": " << ecc << "\n";
+                //     } else {
+                //         std::cout << "  v" << vertex << ": unreachable\n";
+                //     }
+                // }
                 for (const auto& [vertex, ecc] : result.eccentricities) {
                     std::cout << "  v" << vertex << ": " << ecc << "\n";
                 }
@@ -221,6 +230,7 @@ int main() {
                     std::cout << "\nRadius:     " << result.radius << " (edges)\n";
                     std::cout << "Diameter:   " << result.diameter << " (edges)\n";
                 } else {
+                    // TO REVERT: change this to "disconnected graph" when reverting end vertices to -1
                     std::cout << "\nRadius:     N/A (no vertices)\n";
                     std::cout << "Diameter:   N/A (no vertices)\n";
                 }
