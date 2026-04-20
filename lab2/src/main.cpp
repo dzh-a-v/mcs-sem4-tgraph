@@ -488,6 +488,9 @@ int main() {
                               << comparison.speedupFactor << "x times faster than Dijkstra.\n";
                 }
 
+                // Reset output formatting to default
+                std::cout << std::resetiosflags(std::ios_base::floatfield) << std::setprecision(6);
+
                 /*
                 std::cout << "\n--- Analysis ---\n";
                 if (comparison.bfsIterations < comparison.dijkstraIterations) {
