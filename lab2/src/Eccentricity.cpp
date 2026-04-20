@@ -1,162 +1,158 @@
 #include "include/Eccentricity.h"
-#include "include/PathCounter.h"
 #include <limits>
 #include <algorithm>
 #include <functional>
 #include <set>
-
-/// Helper function to find all shortest paths between two vertices
-static std::vector<std::vector<int>> findAllShortestPaths(
-    int start,
-    int end,
-    const AdjacencyGraph& graph,
-    const std::map<std::pair<int,int>, double>& allShortest)
-{
-    std::vector<std::vector<int>> result;
-    constexpr double INF = std::numeric_limits<double>::infinity();
-
-    double targetDist = allShortest.at({start, end});
-    if (targetDist == INF || targetDist == 0) {
-        return result;
-    }
-
-    // Use DFS with pruning based on shortest path distances
-    std::vector<int> currentPath;
-    currentPath.push_back(start);
-
-    std::function<void(int)> dfs = [&](int current) {
-        if (current == end) {
-            result.push_back(currentPath);
-            return;
-        }
-
-        for (const auto& [neighbor, weight] : graph.neighbors(current)) {
-            // Check if this edge is on a shortest path
-            double distToNeighbor = allShortest.at({start, neighbor});
-            double distFromNeighborToEnd = allShortest.at({neighbor, end});
-
-            // Avoid cycles
-            if (std::find(currentPath.begin(), currentPath.end(), neighbor) != currentPath.end()) {
-                continue;
-            }
-
-            // Check if going through this neighbor maintains shortest path property
-            if (distToNeighbor != INF && distFromNeighborToEnd != INF) {
-                double pathThroughNeighbor = distToNeighbor + distFromNeighborToEnd;
-                if (std::abs(pathThroughNeighbor - targetDist) < 1e-9) {
-                    // Check if the edge weight matches the distance increment
-                    double expectedWeight = distToNeighbor - allShortest.at({start, current});
-                    if (std::abs(weight - expectedWeight) < 1e-9 ||
-                        std::abs(allShortest.at({start, current}) + weight - distToNeighbor) < 1e-9) {
-                        currentPath.push_back(neighbor);
-                        dfs(neighbor);
-                        currentPath.pop_back();
-                    }
-                }
-            }
-        }
-    };
-
-    dfs(start);
-    return result;
-}
+#include <queue>
 
 GraphAnalyzer::GraphAnalyzer(const AdjacencyGraph& graph)
     : m_graph(graph)
     , m_vertexCount(graph.size())
 {}
 
-std::map<std::pair<int,int>, double> GraphAnalyzer::computeAllShortestPaths() const {
-    std::map<std::pair<int,int>, double> shortestPaths;
-    constexpr double INF = std::numeric_limits<double>::infinity();
+/// Compute shortest paths in terms of edge count using BFS
+std::map<std::pair<int,int>, int> GraphAnalyzer::computeEdgeCountPaths() const {
+    std::map<std::pair<int,int>, int> distances;
+    auto vertices = m_graph.vertexIds();
     
-    auto vertexIds = m_graph.vertexIds();
-    
-    // Initialize all pairs to infinity so that they are not optimal
-    for (int i : vertexIds) {
-        for (int j : vertexIds) {
-            shortestPaths[{i, j}] = INF;
+    // For each starting vertex, run BFS to find distances to all others
+    for (int start : vertices) {
+        std::map<int, int> dist;
+        std::queue<int> q;
+        
+        // Initialize
+        for (int v : vertices) {
+            dist[v] = -1;  // -1 = unreachable
         }
-        shortestPaths[{i, i}] = 0;  // Distance to self eq 0
-    }
-    
-    // Sh For all Ks
-    for (int k = 1; k < m_vertexCount; ++k) {
-        try {
-            KPathCalculator calculator(m_graph);
-            auto result = calculator.compute(k);
+        dist[start] = 0;
+        q.push(start);
+        
+        // BFS
+        while (!q.empty()) {
+            int current = q.front();
+            q.pop();
             
-            for (size_t i = 0; i < vertexIds.size(); ++i) {
-                for (size_t j = 0; j < vertexIds.size(); ++j) {
-                    if (result.minWeights[i][j].has_value()) {
-                        double dist = result.minWeights[i][j].value();
-                        double& current = shortestPaths[{vertexIds[i], vertexIds[j]}];
-                        if (dist < current) {
-                            current = dist;
-                        }
-                    }
+            for (const auto& [neighbor, weight] : m_graph.neighbors(current)) {
+                if (dist[neighbor] == -1) {  // Not visited
+                    dist[neighbor] = dist[current] + 1;
+                    q.push(neighbor);
                 }
             }
-        } catch (const std::exception&) {
-            continue; // I'm not sure I'll need it, but it helped me once
+        }
+        
+        // Store distances
+        for (int end : vertices) {
+            if (dist[end] >= 0) {
+                distances[{start, end}] = dist[end];
+            } else {
+                distances[{start, end}] = -1;  // Unreachable
+            }
         }
     }
     
-    return shortestPaths;
+    return distances;
+}
+
+/// Find all paths with exactly k edges between two vertices using DFS
+std::vector<std::vector<int>> GraphAnalyzer::findAllPathsWithExactEdges(
+    int start,
+    int end,
+    int edgeCount,
+    const std::map<std::pair<int,int>, int>& edgeCounts) const
+{
+    std::vector<std::vector<int>> result;
+    
+    // Check if path exists with exactly edgeCount edges
+    if (edgeCounts.at({start, end}) != edgeCount) {
+        return result;  // No such path
+    }
+    
+    // DFS to find all paths with exactly edgeCount edges
+    std::vector<int> currentPath;
+    currentPath.push_back(start);
+    
+    std::function<void(int, int)> dfs = [&](int current, int edgesUsed) {
+        if (edgesUsed == edgeCount) {
+            if (current == end) {
+                result.push_back(currentPath);
+            }
+            return;
+        }
+        
+        // Remaining edges needed
+        int remaining = edgeCount - edgesUsed;
+        
+        for (const auto& [neighbor, weight] : m_graph.neighbors(current)) {
+            // Avoid cycles
+            if (std::find(currentPath.begin(), currentPath.end(), neighbor) != currentPath.end()) {
+                continue;
+            }
+            
+            // Check if we can reach end with exactly remaining edges from neighbor
+            int distToEnd = edgeCounts.at({neighbor, end});
+            if (distToEnd >= 0 && distToEnd == remaining - 1) {
+                currentPath.push_back(neighbor);
+                dfs(neighbor, edgesUsed + 1);
+                currentPath.pop_back();
+            }
+        }
+    };
+    
+    dfs(start, 0);
+    return result;
 }
 
 EccentricityData GraphAnalyzer::analyze() {
     EccentricityData result;
-    constexpr double INF = std::numeric_limits<double>::infinity();
-
-    result.radius = INF;
-    result.diameter = -INF;
+    result.radius = std::numeric_limits<int>::max();
+    result.diameter = -1;
 
     auto vertices = m_graph.vertexIds();
+    auto edgeCounts = computeEdgeCountPaths();
 
-    auto allShortest = computeAllShortestPaths();
-
+    // Compute eccentricities (maximum edge distance for each vertex)
     for (int v : vertices) {
-        double ecc = 0.0;
+        int ecc = -1;  // -1 = unreachable to all
         bool hasReachable = false;
 
         for (int u : vertices) {
             if (u != v) {
-                double dist = allShortest[{v, u}];
-                if (dist != INF) {
+                int dist = edgeCounts[{v, u}];
+                if (dist >= 0) {
                     ecc = std::max(ecc, dist);
                     hasReachable = true;
                 }
             }
         }
 
-        result.eccentricities[v] = hasReachable ? ecc : INF;
+        // If no reachable vertices (end/sink vertex), set eccentricity to 0
+        result.eccentricities[v] = hasReachable ? ecc : 0;
         
-        // Only consider vertices with finite eccentricity for radius/diameter
-        if (result.eccentricities[v] != INF) {
+        // Only consider vertices with non-negative eccentricity for radius/diameter
+        if (result.eccentricities[v] >= 0) {
             result.radius = std::min(result.radius, result.eccentricities[v]);
             result.diameter = std::max(result.diameter, result.eccentricities[v]);
         }
     }
 
+    // Find center and diametrical vertices
     for (const auto& [v, ecc] : result.eccentricities) {
-        if (std::abs(ecc - result.radius) < 1e-9) {
+        if (ecc == result.radius) {
             result.centerVertices.push_back(v);
         }
-        if (std::abs(ecc - result.diameter) < 1e-9) {
+        if (ecc == result.diameter) {
             result.diametricalVertices.push_back(v);
         }
     }
 
-    // Find all diametrical pairs (unique unordered pairs at diameter distance)
-    // Store as ordered pairs (min, max) to avoid duplicates
+    // Find all diametrical pairs (unique unordered pairs at diameter edge distance)
     std::set<std::pair<int, int>> diametricalPairs;
     
     for (int start : vertices) {
         for (int end : vertices) {
             if (start != end) {
-                double dist = allShortest[{start, end}];
-                if (std::abs(dist - result.diameter) < 1e-9) {
+                int dist = edgeCounts[{start, end}];
+                if (dist == result.diameter) {
                     // Normalize pair: store as (min, max)
                     int first = std::min(start, end);
                     int second = std::max(start, end);
@@ -168,7 +164,7 @@ EccentricityData GraphAnalyzer::analyze() {
     
     // Find all diametrical paths for each unique pair
     for (const auto& [v1, v2] : diametricalPairs) {
-        auto paths = findAllShortestPaths(v1, v2, m_graph, allShortest);
+        auto paths = findAllPathsWithExactEdges(v1, v2, result.diameter, edgeCounts);
         if (!paths.empty()) {
             result.diametricalPathsByPair[{v1, v2}] = paths;
         }

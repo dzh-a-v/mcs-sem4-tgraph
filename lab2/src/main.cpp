@@ -201,24 +201,29 @@ int main() {
             }
             
             // =========================================================
-            case 2:  // Eccentricity Analysis (Shimbell's Method)
+            case 2:  // Eccentricity Analysis (by edge count)
             {
                 if (!currentGraph) {
                     std::cout << "[!] Generate a graph first\n";
                     break;
                 }
 
-                std::cout << "\n--- Eccentricity Computation (Shimbell) ---\n";
+                std::cout << "\n--- Eccentricity Computation (by edge count) ---\n";
                 GraphAnalyzer analyzer(*currentGraph);
                 auto result = analyzer.analyze();
 
-                std::cout << "\nVertex Eccentricities:\n";
+                std::cout << "\nVertex Eccentricities (in edges):\n";
                 for (const auto& [vertex, ecc] : result.eccentricities) {
                     std::cout << "  v" << vertex << ": " << ecc << "\n";
                 }
 
-                std::cout << "\nRadius:     " << result.radius << "\n";
-                std::cout << "Diameter:   " << result.diameter << "\n";
+                if (result.radius >= 0) {
+                    std::cout << "\nRadius:     " << result.radius << " (edges)\n";
+                    std::cout << "Diameter:   " << result.diameter << " (edges)\n";
+                } else {
+                    std::cout << "\nRadius:     N/A (no vertices)\n";
+                    std::cout << "Diameter:   N/A (no vertices)\n";
+                }
 
                 std::cout << "Center:     ";
                 for (int v : result.centerVertices) std::cout << "v" << v << " ";
@@ -264,8 +269,6 @@ int main() {
                 //try {
                     KPathCalculator calculator(*currentGraph);
                     auto result = calculator.compute(k);
-                    
-                    std::cout << "\n[DEBUG] Requested k = " << k << ", Got edgeCount = " << result.edgeCount << "\n";
                     
                     auto vertexIds = currentGraph->vertexIds();
                     displayMatrix("Minimum Weight Paths", result.minWeights, vertexIds);
