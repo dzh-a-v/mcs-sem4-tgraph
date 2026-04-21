@@ -15,32 +15,38 @@ ShimbellOutput KPathCalculator::compute(int edgeCount) {
         throw std::invalid_argument("Edge count must be positive");
     }
     
-    // Initialize with weight matrix (k=1)
+    // Step 1: Build the base matrix for 1-edge paths (direct connections)
     WeightTable baseMatrix = buildWeightMatrix();
     
-    // Base case: k=1
+    // If we only want 1-edge paths, just return the base matrix with diagonal set to 0
+    // (diagonal = 0 means no cost for staying at the same vertex, but we don't count it as a path)
     if (edgeCount == 1) {
-        // Add diagonal = 0 for k=1 results
         for (int i = 0; i < m_vertexCount; ++i) {
             baseMatrix[i][i] = 0.0;
         }
         return {baseMatrix, baseMatrix, 1};
     }
     
-    // For k > 1, compute A^k by multiplying A^(k-1) * A^1 step by step
-    // Each iteration produces paths with EXACTLY that many edges
-    WeightTable minMatrix = baseMatrix;
-    WeightTable maxMatrix = baseMatrix;
+    // Step 2: For more edges (k > 1), we "raise the matrix to the power k" using special multiplication
+    // Think of it like: start with 1-edge paths, then multiply by the base to get 2-edge paths,
+    // multiply again for 3-edge paths, and so on, up to k edges.
+    // We use min-plus multiplication for shortest paths (smallest total weight) and
+    // max-plus for longest paths (biggest total weight).
+    // This is like matrix exponentiation, but in a "tropical" way for graphs!
+    WeightTable minMatrix = baseMatrix;  // Starts as A^1
+    WeightTable maxMatrix = baseMatrix;  // Starts as A^1
     
+    // Loop from 2 to k: each time, multiply the current matrix by the base matrix
+    // This builds up paths with exactly 'step' edges
     for (int step = 2; step <= edgeCount; ++step) {
-        // minMatrix currently contains paths with exactly (step-1) edges
-        // Multiply by baseMatrix (which has paths with exactly 1 edge)
-        // Result has paths with exactly step edges
+        // Right now, minMatrix has paths with exactly (step-1) edges.
+        // We multiply it by baseMatrix (1-edge paths) to get paths with exactly 'step' edges.
+        // For example: 2-edge paths = (1-edge paths) combined with (1-edge paths)
         minMatrix = multiplyMinPlus(minMatrix, baseMatrix);
         maxMatrix = multiplyMaxPlus(maxMatrix, baseMatrix);
     }
     
-    // Add diagonal = 0 for result
+    // Step 3: Set diagonal to 0 in the final result (no self-cost for the paths we found)
     for (int i = 0; i < m_vertexCount; ++i) {
         minMatrix[i][i] = 0.0;
         maxMatrix[i][i] = 0.0;
@@ -93,6 +99,7 @@ WeightTable KPathCalculator::multiplyMinPlus(
             // Try all intermediate vertices k
             for (int k = 0; k < m_vertexCount; ++k) {
                 if (left[i][k].has_value() && right[k][j].has_value()) {
+                    // Perform min-plus multiplication: sum the weights and track the minimum
                     double sum = left[i][k].value() + right[k][j].value();
                     
                     if (!minimum.has_value() || sum < minimum.value()) {
@@ -125,6 +132,7 @@ WeightTable KPathCalculator::multiplyMaxPlus(
             // Try all intermediate vertices k
             for (int k = 0; k < m_vertexCount; ++k) {
                 if (left[i][k].has_value() && right[k][j].has_value()) {
+                    // Perform max-plus multiplication: sum the weights and track the maximum
                     double sum = left[i][k].value() + right[k][j].value();
                     
                     if (!maximum.has_value() || sum > maximum.value()) {
