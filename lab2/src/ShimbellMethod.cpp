@@ -11,8 +11,21 @@ KPathCalculator::KPathCalculator(const AdjacencyGraph& graph)
 {}
 
 ShimbellOutput KPathCalculator::compute(int edgeCount) {
-    if (edgeCount <= 0) {
-        throw std::invalid_argument("Edge count must be positive");
+    if (edgeCount < 0) {
+        throw std::invalid_argument("Edge count must be non-negative");
+    }
+
+    if (edgeCount == 0) {
+        WeightTable zeroEdgeMatrix(
+            m_vertexCount,
+            std::vector<std::optional<double>>(m_vertexCount, std::nullopt)
+        );
+
+        for (int i = 0; i < m_vertexCount; ++i) {
+            zeroEdgeMatrix[i][i] = 0.0;
+        }
+
+        return {zeroEdgeMatrix, zeroEdgeMatrix, 0};
     }
     
     // Step 1: Build the base matrix for 1-edge paths (direct connections)
@@ -56,8 +69,6 @@ ShimbellOutput KPathCalculator::compute(int edgeCount) {
 }
 
 WeightTable KPathCalculator::buildWeightMatrix() const {
-    const double INF_PLACEHOLDER = std::numeric_limits<double>::infinity();
-    
     // Initialize with nullopt (no path)
     WeightTable matrix(
         m_vertexCount, 
