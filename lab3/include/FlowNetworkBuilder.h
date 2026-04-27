@@ -10,15 +10,12 @@
 class FlowNetworkBuilder {
 public:
     // graph gives us only structure (who is connected with whom)
-    // capacities and costs are generated here separately for lab 3
+    // capacities and costs are generated here separately from first generation
     std::unique_ptr<FlowNetwork> buildFromGraph(const AdjacencyGraph& graph);
 
 private:
-    // capacity may be 0 or positive
     int generateRandomCapacity();
-    // generated independently from capacity
     int generateRandomCost();
 
-    // reuse existing generator logic from the project
     AcyclicGraphBuilder m_generator;
 };

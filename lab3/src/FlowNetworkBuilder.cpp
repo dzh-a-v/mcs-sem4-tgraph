@@ -19,11 +19,9 @@ std::unique_ptr<FlowNetwork> FlowNetworkBuilder::buildFromGraph(const AdjacencyG
 }
 
 int FlowNetworkBuilder::generateRandomCapacity() {
-    // use same binomial sampler as in graph generator
     return m_generator.sampleBinomial(BINOMIAL_N_WEIGHT, BINOMIAL_P_WEIGHT);
 }
 
 int FlowNetworkBuilder::generateRandomCost() {
-    // cost may be 0, that's normal
     return m_generator.sampleBinomial(BINOMIAL_N_WEIGHT, BINOMIAL_P_WEIGHT);
 }
