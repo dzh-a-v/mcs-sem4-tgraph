@@ -42,8 +42,9 @@ void showMenu() {
     std::cout << "  15. Find maximum flow\n";
     std::cout << "  16. Find minimum-cost flow for [2/3 * max]\n";
     std::cout << "  17. Show flow network details\n";
-    std::cout << "  02. Export current flow network to Mermaid\n";
-    std::cout << "  99. Export current graph to Mermaid\n";
+    std::cout << "\n  --- Custom ---\n";
+    std::cout << "  101. Export current graph to Mermaid\n";
+    std::cout << "  102. Export current flow network to Mermaid\n";
     std::cout << "  0. Quit\n";
     std::cout << "===============================\n";
     std::cout << "> ";
@@ -58,16 +59,6 @@ int readInteger(const std::string& prompt) {
         std::cout << "Invalid input. " << prompt;
     }
     return value;
-}
-
-std::string readMenuCommand() {
-    std::string command;
-    while (!(std::cin >> command)) {
-        std::cin.clear();
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        std::cout << "Invalid input. > ";
-    }
-    return command;
 }
 
 WeightSign selectWeightSign() {
@@ -223,7 +214,6 @@ int main() {
     std::unique_ptr<AdjacencyGraph> currentGraph;
     std::unique_ptr<FlowNetwork> currentFlowNetwork;
     int userChoice;
-    std::string userChoiceRaw;
     double lastMaxFlow = 0.0;
     int lastFlowSource = -1;
     int lastFlowSink = -1;
@@ -231,21 +221,7 @@ int main() {
     
     do {
         showMenu();
-        userChoiceRaw = readMenuCommand();
-
-        if (userChoiceRaw == "02") {
-            userChoice = 102;
-        } else {
-            try {
-                size_t processedChars = 0;
-                userChoice = std::stoi(userChoiceRaw, &processedChars);
-                if (processedChars != userChoiceRaw.size()) {
-                    userChoice = -1;
-                }
-            } catch (const std::exception&) {
-                userChoice = -1;
-            }
-        }
+        userChoice = readInteger("");
         
         switch (userChoice) {
             // =========================================================
@@ -766,7 +742,7 @@ int main() {
             }
 
             // =========================================================
-            case 102:  // Export Flow Network Mermaid via 02
+            case 102:  // Export Flow Network Mermaid
             {
                 if (!currentFlowNetwork) {
                     std::cout << "[!] Build the flow network first\n";
@@ -784,7 +760,7 @@ int main() {
             }
 
             // =========================================================
-            case 99:  // Export Mermaid
+            case 101:  // Export Graph Mermaid
             {
                 if (!currentGraph) {
                     std::cout << "[!] Generate a graph first\n";
