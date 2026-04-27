@@ -244,6 +244,21 @@ void showFlowNetworkDetails(const std::unique_ptr<FlowNetwork>& network) {
     }
 }
 
+bool sinkHasOnlyZeroCapacityIncomingEdges(const FlowNetwork& network, int sink) {
+    bool hasIncomingEdges = false;
+
+    for (const FlowEdge& edge : network.edges()) {
+        if (edge.to == sink) {
+            hasIncomingEdges = true;
+            if (edge.capacity > 0) {
+                return false;
+            }
+        }
+    }
+
+    return hasIncomingEdges;
+}
+
 // ============================================================================
 // Main Program
 // ============================================================================
@@ -709,7 +724,11 @@ int main() {
 
                 std::cout << "\n[OK] Maximum flow = " << result.maxFlow << "\n";
                 if (result.steps.empty()) {
-                    std::cout << "[!] No augmenting path found\n";
+                    if (sinkHasOnlyZeroCapacityIncomingEdges(*currentFlowNetwork, sink)) {
+                        std::cout << "[!] No paths from source to sink: all edges leading to the sink have capacity = 0\n";
+                    } else {
+                        std::cout << "[!] No augmenting path found\n";
+                    }
                 } else {
                     std::cout << "\nAugmenting steps:\n";
                     for (const MaxFlowStep& step : result.steps) {
@@ -755,6 +774,11 @@ int main() {
                 std::cout << "Achieved flow:   " << result.achievedFlow << "\n";
                 std::cout << "Total cost:      " << result.totalCost << "\n";
                 std::cout << "Success:         " << (result.success ? "yes" : "no") << "\n";
+
+                if (result.achievedFlow == 0 &&
+                    sinkHasOnlyZeroCapacityIncomingEdges(*currentFlowNetwork, lastFlowSink)) {
+                    std::cout << "[!] No paths from source to sink: all edges leading to the sink have capacity = 0\n";
+                }
 
                 if (!result.steps.empty()) {
                     std::cout << "\nAugmenting steps:\n";

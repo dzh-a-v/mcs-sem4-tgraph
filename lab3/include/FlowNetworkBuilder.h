@@ -14,7 +14,7 @@ public:
     std::unique_ptr<FlowNetwork> buildFromGraph(const AdjacencyGraph& graph);
 
 private:
-    // keep cap >= 1 so edge is usable in flow network
+    // capacity may be 0 or positive
     int generateRandomCapacity();
     // generated independently from capacity
     int generateRandomCost();

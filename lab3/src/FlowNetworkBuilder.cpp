@@ -20,9 +20,7 @@ std::unique_ptr<FlowNetwork> FlowNetworkBuilder::buildFromGraph(const AdjacencyG
 
 int FlowNetworkBuilder::generateRandomCapacity() {
     // use same binomial sampler as in graph generator
-    const int sampled = m_generator.sampleBinomial(BINOMIAL_N_WEIGHT, BINOMIAL_P_WEIGHT);
-    // capacity 0 would make edge useless, so lift it to 1
-    return sampled < 1 ? 1 : sampled;
+    return m_generator.sampleBinomial(BINOMIAL_N_WEIGHT, BINOMIAL_P_WEIGHT);
 }
 
 int FlowNetworkBuilder::generateRandomCost() {
