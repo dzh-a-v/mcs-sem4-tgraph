@@ -106,52 +106,100 @@ bool MinCostFlowSolver::dijkstra(int source, int sink,
                                  std::unordered_map<int, double>& distances,
                                  std::unordered_map<int, ResidualArc>& parent) const
 {
-    const double infinity = std::numeric_limits<double>::infinity();
-    std::unordered_set<int> visited;
-
+    constexpr double INF = std::numeric_limits<double>::infinity();
     distances.clear();
     parent.clear();
 
-    for (int vertexId : m_network.vertexIds()) {
-        distances[vertexId] = infinity;
+    if (!m_network.hasVertex(source)) {
+        return false;
     }
-    distances[source] = 0.0;
 
-    while (visited.size() < static_cast<size_t>(m_network.size())) {
-        int current = -1;
-        double bestDistance = infinity;
+    auto vertexIds = m_network.vertexIds();
+    int p = m_network.size();  // number of vertices (p in the algorithm)
 
-        // Follow the same Dijkstra-style selection logic as elsewhere in the lab,
-        // even when some costs are negative by the lab convention.
-        for (int vertexId : m_network.vertexIds()) {
-            if (visited.find(vertexId) == visited.end() &&
-                distances[vertexId] < bestDistance) {
-                bestDistance = distances[vertexId];
-                current = vertexId;
-            }
-        }
+    // Build hash map for vertex ID to index (1-based to match algorithm)
+    std::unordered_map<int, int> idToIndex;
+    for (int i = 0; i < p; ++i) {
+        idToIndex[vertexIds[i]] = i;
+    }
 
-        if (current == -1) {
-            break;
-        }
+    // T[v] -- distance from s to v (T : array [1..p] of real)
+    std::vector<double> T(p, INF);
+    
+    // X[v] -- mark: 0 = unvisited, 1 = visited (X : array [1..p] of 0..1)
+    std::vector<int> X(p, 0);
+    
+    // H[v] -- predecessor of v on shortest path (H : array [1..p] of 0..p)
+    std::vector<int> H(p, -1);
+    std::vector<std::optional<ResidualArc>> parentArcs(p, std::nullopt);
 
-        visited.insert(current);
-        if (current == sink) {
-            break;
-        }
+    int s = source;
+    int t = sink;
 
-        for (const ResidualArc& arc : m_network.residualNeighbors(current)) {
-            if (visited.find(arc.to) != visited.end()) {
+    int startIndex = idToIndex[s];
+    T[startIndex] = 0.0;      // T[s] := 0
+    X[startIndex] = 1;        // X[s] := 1 (s is known)
+
+    int v = s;                // v := s (current vertex)
+    int vIndex = startIndex;
+
+    // Label M: update labels
+    while (true) {
+        //result.iterations++;  // Count: main loop iteration
+
+        // for u ∈ Γ(v) do -- examine all neighbors of v
+        for (const ResidualArc& arc : m_network.residualNeighbors(v)) {
+            auto neighborIt = idToIndex.find(arc.to);
+            if (neighborIt == idToIndex.end()) {
                 continue;
             }
+            int uIndex = neighborIt->second;
 
-            double candidateDistance = distances[current] + arc.cost;
-            if (candidateDistance < distances[arc.to]) {
-                distances[arc.to] = candidateDistance;
-                parent[arc.to] = arc;
+            // if X[u] = 0 & T[u] > T[v] + C[v, u] then
+            if (X[uIndex] == 0 && T[uIndex] > T[vIndex] + arc.cost) {
+                T[uIndex] = T[vIndex] + arc.cost;  // T[u] := T[v] + C[v, u]
+                H[uIndex] = vIndex;                // H[u] := v
+                parentArcs[uIndex] = arc;
             }
+        }
+
+        // m := ∞; v := 0
+        double m = INF;
+        v = 0;
+        vIndex = -1;
+
+        // for u from 1 to p do -- find vertex with minimum T
+        for (int u = 0; u < p; ++u) {
+            // if X[u] = 0 & T[u] < m then
+            if (X[u] == 0 && T[u] < m) {
+                vIndex = u;
+                m = T[u];
+                v = vertexIds[u];
+            }
+        }
+
+        // if v = 0 then stop -- no path from s to t
+        if (vIndex == -1) {
+            break;
+        }
+
+        // if v = t then stop -- shortest path from s to t found
+        if (v == t) {
+            break;
+        }
+
+        X[vIndex] = 1;  // X[v] := 1 -- shortest path from s to v found
+    }
+
+    for (int i = 0; i < p; ++i) {
+        if (T[i] != INF) {
+            distances[vertexIds[i]] = T[i];
+        }
+        if (parentArcs[i].has_value()) {
+            parent[vertexIds[i]] = parentArcs[i].value();
         }
     }
 
-    return distances[sink] != infinity;
+    auto sinkIt = idToIndex.find(sink);
+    return sinkIt != idToIndex.end() && T[sinkIt->second] != INF;
 }
