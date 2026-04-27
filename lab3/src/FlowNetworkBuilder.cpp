@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-std::unique_ptr<FlowNetwork> FlowNetworkBuilder::buildFromGraph(const AdjacencyGraph& graph) const {
+std::unique_ptr<FlowNetwork> FlowNetworkBuilder::buildFromGraph(const AdjacencyGraph& graph) {
     auto network = std::make_unique<FlowNetwork>(true);
 
     for (int vertexId : graph.vertexIds()) {
@@ -10,7 +10,7 @@ std::unique_ptr<FlowNetwork> FlowNetworkBuilder::buildFromGraph(const AdjacencyG
     }
 
     for (const WeightedEdge& edge : graph.edges()) {
-        network->addEdge(edge.from, edge.to, deriveCapacity(edge.weight), edge.weight);
+        network->addEdge(edge.from, edge.to, deriveCapacity(edge.weight), generateRandomCost());
     }
 
     return network;
@@ -19,4 +19,10 @@ std::unique_ptr<FlowNetwork> FlowNetworkBuilder::buildFromGraph(const AdjacencyG
 double FlowNetworkBuilder::deriveCapacity(double weight) const {
     const double magnitude = std::abs(weight);
     return magnitude < 1.0 ? 1.0 : magnitude;
+}
+
+double FlowNetworkBuilder::generateRandomCost() {
+    return static_cast<double>(
+        m_generator.sampleBinomial(BINOMIAL_N_WEIGHT, BINOMIAL_P_WEIGHT)
+    );
 }
