@@ -1,1 +1,1 @@
-cd .\build\ && cmake .. && cmake --build . && .\Debug\lab2.exe
+cd .\build\ && cmake .. && cmake --build . && .\Debug\lab3.exe

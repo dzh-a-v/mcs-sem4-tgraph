@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.10)
-project(lab2)
+project(lab3)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include_directories(${CMAKE_SOURCE_DIR})
 
-add_executable(lab2
+add_executable(lab3
     src/main.cpp
     src/Graph.cpp
     src/Generator.cpp
@@ -16,4 +16,8 @@ add_executable(lab2
     src/BFS.cpp
     src/Dijkstra.cpp
     src/AlgorithmComparator.cpp
+    src/FlowNetwork.cpp
+    src/FlowNetworkBuilder.cpp
+    src/MaxFlowSolver.cpp
+    src/MinCostFlow.cpp
 )

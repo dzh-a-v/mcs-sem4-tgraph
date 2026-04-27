@@ -1,6 +1,7 @@
 #include <iostream>
 #include <iomanip>
 #include <limits>
+#include <cmath>
 #include "include/Graph.h"
 #include "include/Generator.h"
 #include "include/ShimbellMethod.h"
@@ -9,6 +10,10 @@
 #include "include/BFS.h"
 #include "include/Dijkstra.h"
 #include "include/AlgorithmComparator.h"
+#include "include/FlowNetwork.h"
+#include "include/FlowNetworkBuilder.h"
+#include "include/MaxFlowSolver.h"
+#include "include/MinCostFlow.h"
 
 // ============================================================================
 // Helper Functions
@@ -28,6 +33,13 @@ void showMenu() {
     std::cout << "  9. BFS traversal\n";
     std::cout << "  10. Dijkstra's shortest path\n";
     std::cout << "  11. Compare BFS vs Dijkstra (speed)\n";
+    std::cout << "\n  --- Lab 3 ---\n";
+    std::cout << "  12. Build flow network from current directed graph\n";
+    std::cout << "  13. Show capacity matrix\n";
+    std::cout << "  14. Show cost matrix\n";
+    std::cout << "  15. Find maximum flow\n";
+    std::cout << "  16. Find minimum-cost flow for [2/3 * max]\n";
+    std::cout << "  17. Show flow network details\n";
     std::cout << "  0. Quit\n";
     std::cout << "===============================\n";
     std::cout << "> ";
@@ -155,13 +167,52 @@ void showGraphDetails(const std::unique_ptr<AdjacencyGraph>& graph) {
     std::cout << "\n";
 }
 
+void printVertexPath(const std::vector<int>& path) {
+    for (size_t i = 0; i < path.size(); ++i) {
+        std::cout << "v" << path[i];
+        if (i + 1 < path.size()) {
+            std::cout << " -> ";
+        }
+    }
+}
+
+void showFlowNetworkDetails(const std::unique_ptr<FlowNetwork>& network) {
+    if (!network) {
+        std::cout << "[!] No flow network available\n";
+        return;
+    }
+
+    std::cout << "\n=== FLOW NETWORK ===\n";
+    std::cout << "Type:       " << (network->isDirected() ? "Directed" : "Undirected") << "\n";
+    std::cout << "Vertices:   " << network->size() << "\n";
+    std::cout << "Edges:      " << network->edges().size() << "\n";
+    std::cout << "Vertex IDs: ";
+    for (int vertexId : network->vertexIds()) {
+        std::cout << vertexId << " ";
+    }
+    std::cout << "\n";
+
+    std::cout << "\nEdges:\n";
+    for (const FlowEdge& edge : network->edges()) {
+        std::cout << "  v" << edge.from << " -> v" << edge.to
+                  << " | capacity = " << edge.capacity
+                  << ", cost = " << edge.cost
+                  << ", flow = " << edge.flow << "\n";
+    }
+}
+
 // ============================================================================
 // Main Program
 // ============================================================================
 
 int main() {
     std::unique_ptr<AdjacencyGraph> currentGraph;
+    std::unique_ptr<FlowNetwork> currentFlowNetwork;
     int userChoice;
+    double lastMaxFlow = 0.0;
+    int lastFlowSource = -1;
+    int lastFlowSink = -1;
+    bool hasMaxFlowResult = false;
     
     do {
         showMenu();
@@ -188,6 +239,11 @@ int main() {
                 AcyclicGraphBuilder builder;
                 currentGraph = builder.generateAcyclicGraph(
                     numVertices, isDirected, wSign);
+                currentFlowNetwork.reset();
+                lastMaxFlow = 0.0;
+                lastFlowSource = -1;
+                lastFlowSink = -1;
+                hasMaxFlowResult = false;
 
                 std::cout << "\n[OK] Graph created successfully!\n";
                 std::cout << "    Vertices: " << numVertices << "\n";
@@ -515,6 +571,168 @@ int main() {
                     std::cout << "Both algorithms required the same number of iterations.\n";
                 }
                 */
+                break;
+            }
+
+            // =========================================================
+            case 12:  // Build Flow Network
+            {
+                if (!currentGraph) {
+                    std::cout << "[!] Generate a graph first\n";
+                    break;
+                }
+                if (!currentGraph->isDirected()) {
+                    std::cout << "[!] Lab 3 requires a directed graph. Generate a directed graph first.\n";
+                    break;
+                }
+
+                FlowNetworkBuilder builder;
+                currentFlowNetwork = builder.buildFromGraph(*currentGraph);
+                lastMaxFlow = 0.0;
+                lastFlowSource = -1;
+                lastFlowSink = -1;
+                hasMaxFlowResult = false;
+
+                std::cout << "\n[OK] Flow network built from the current graph.\n";
+                std::cout << "    Capacity(u, v) = max(1, |weight(u, v)|)\n";
+                std::cout << "    Cost(u, v) = original edge weight\n";
+                std::cout << "    Vertices: " << currentFlowNetwork->size() << "\n";
+                std::cout << "    Edges:    " << currentFlowNetwork->edges().size() << "\n";
+                break;
+            }
+
+            // =========================================================
+            case 13:  // Show Capacity Matrix
+            {
+                if (!currentFlowNetwork) {
+                    std::cout << "[!] Build the flow network first\n";
+                    break;
+                }
+
+                std::cout << "\n=== CAPACITY MATRIX ===\n";
+                std::cout << "i = no directed edge\n";
+                printFlowMatrix(std::cout,
+                                currentFlowNetwork->getCapacityMatrix(),
+                                currentFlowNetwork->vertexIds());
+                break;
+            }
+
+            // =========================================================
+            case 14:  // Show Cost Matrix
+            {
+                if (!currentFlowNetwork) {
+                    std::cout << "[!] Build the flow network first\n";
+                    break;
+                }
+
+                std::cout << "\n=== COST MATRIX ===\n";
+                std::cout << "i = no directed edge\n";
+                printFlowMatrix(std::cout,
+                                currentFlowNetwork->getCostMatrix(),
+                                currentFlowNetwork->vertexIds());
+                break;
+            }
+
+            // =========================================================
+            case 15:  // Maximum Flow
+            {
+                if (!currentFlowNetwork) {
+                    std::cout << "[!] Build the flow network first\n";
+                    break;
+                }
+
+                std::cout << "\n--- Maximum Flow (Ford-Fulkerson) ---\n";
+                int source = readInteger("Source vertex: ");
+                int sink = readInteger("Sink vertex: ");
+
+                if (!currentFlowNetwork->hasVertex(source) ||
+                    !currentFlowNetwork->hasVertex(sink) ||
+                    source == sink) {
+                    std::cout << "[!] Invalid source/sink pair\n";
+                    break;
+                }
+
+                MaxFlowSolver solver(*currentFlowNetwork);
+                MaxFlowResult result = solver.compute(source, sink);
+
+                lastMaxFlow = result.maxFlow;
+                lastFlowSource = source;
+                lastFlowSink = sink;
+                hasMaxFlowResult = true;
+
+                std::cout << "\n[OK] Maximum flow = " << result.maxFlow << "\n";
+                if (result.steps.empty()) {
+                    std::cout << "[!] No augmenting path found\n";
+                } else {
+                    std::cout << "\nAugmenting steps:\n";
+                    for (const MaxFlowStep& step : result.steps) {
+                        std::cout << "  Step " << step.iteration << ": ";
+                        printVertexPath(step.path);
+                        std::cout << " | added flow = " << step.pathFlow
+                                  << " | total = " << step.totalFlow << "\n";
+                    }
+                }
+
+                std::cout << "\nFlow matrix after max flow:\n";
+                printFlowMatrix(std::cout,
+                                currentFlowNetwork->getFlowMatrix(),
+                                currentFlowNetwork->vertexIds());
+                break;
+            }
+
+            // =========================================================
+            case 16:  // Minimum-Cost Flow
+            {
+                if (!currentFlowNetwork) {
+                    std::cout << "[!] Build the flow network first\n";
+                    break;
+                }
+                if (!hasMaxFlowResult) {
+                    std::cout << "[!] Compute maximum flow first\n";
+                    break;
+                }
+
+                const double targetFlow = std::floor((2.0 / 3.0) * lastMaxFlow);
+
+                std::cout << "\n--- Minimum-Cost Flow ---\n";
+                std::cout << "Using the same source/sink as the maximum-flow run: "
+                          << "v" << lastFlowSource << " -> v" << lastFlowSink << "\n";
+                std::cout << "Target flow = floor(2/3 * " << lastMaxFlow
+                          << ") = " << targetFlow << "\n";
+
+                MinCostFlowSolver solver(*currentFlowNetwork);
+                MinCostFlowResult result = solver.compute(lastFlowSource, lastFlowSink, targetFlow);
+
+                std::cout << "\n=== Result ===\n";
+                std::cout << "Target flow:     " << result.targetFlow << "\n";
+                std::cout << "Achieved flow:   " << result.achievedFlow << "\n";
+                std::cout << "Total cost:      " << result.totalCost << "\n";
+                std::cout << "Success:         " << (result.success ? "yes" : "no") << "\n";
+
+                if (!result.steps.empty()) {
+                    std::cout << "\nAugmenting steps:\n";
+                    for (const MinCostFlowStep& step : result.steps) {
+                        std::cout << "  Step " << step.iteration << ": ";
+                        printVertexPath(step.path);
+                        std::cout << "\n    added flow:       " << step.pathFlow
+                                  << "\n    path unit cost:   " << step.pathUnitCost
+                                  << "\n    cumulative flow:  " << step.cumulativeFlow
+                                  << "\n    cumulative cost:  " << step.cumulativeCost
+                                  << "\n";
+                    }
+                }
+
+                std::cout << "\nFlow matrix after minimum-cost flow:\n";
+                printFlowMatrix(std::cout,
+                                currentFlowNetwork->getFlowMatrix(),
+                                currentFlowNetwork->vertexIds());
+                break;
+            }
+
+            // =========================================================
+            case 17:  // Flow Network Details
+            {
+                showFlowNetworkDetails(currentFlowNetwork);
                 break;
             }
 
