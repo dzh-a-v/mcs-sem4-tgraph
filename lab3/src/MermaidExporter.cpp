@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iomanip>
 #include <sstream>
+#include <string>
 #include <stdexcept>
 
 #include <windows.h>
@@ -23,6 +24,10 @@ std::string formatWeight(double weight) {
         return "0";
     }
     return text;
+}
+
+std::string formatWeight(int weight) {
+    return std::to_string(weight);
 }
 }
 

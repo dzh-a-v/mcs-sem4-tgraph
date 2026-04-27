@@ -14,13 +14,11 @@ std::unique_ptr<FlowNetwork> FlowNetworkBuilder::buildFromGraph(const AdjacencyG
     return network;
 }
 
-double FlowNetworkBuilder::generateRandomCapacity() {
+int FlowNetworkBuilder::generateRandomCapacity() {
     const int sampled = m_generator.sampleBinomial(BINOMIAL_N_WEIGHT, BINOMIAL_P_WEIGHT);
-    return sampled < 1 ? 1.0 : static_cast<double>(sampled);
+    return sampled < 1 ? 1 : sampled;
 }
 
-double FlowNetworkBuilder::generateRandomCost() {
-    return static_cast<double>(
-        m_generator.sampleBinomial(BINOMIAL_N_WEIGHT, BINOMIAL_P_WEIGHT)
-    );
+int FlowNetworkBuilder::generateRandomCost() {
+    return m_generator.sampleBinomial(BINOMIAL_N_WEIGHT, BINOMIAL_P_WEIGHT);
 }

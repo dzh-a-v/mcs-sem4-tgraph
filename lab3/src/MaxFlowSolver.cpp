@@ -43,7 +43,7 @@ MaxFlowSolver::MaxFlowSolver(FlowNetwork& network)
     : m_network(network) {}
 
 MaxFlowResult MaxFlowSolver::compute(int source, int sink) {
-    MaxFlowResult result{0.0, {}};
+    MaxFlowResult result{0, {}};
 
     if (source == sink ||
         !m_network.hasVertex(source) ||
@@ -62,7 +62,7 @@ MaxFlowResult MaxFlowSolver::compute(int source, int sink) {
             break;
         }
 
-        double bottleneck = std::numeric_limits<double>::infinity();
+        int bottleneck = std::numeric_limits<int>::max();
         for (const ResidualArc& arc : residualPath) {
             bottleneck = std::min(bottleneck, arc.residualCapacity);
         }

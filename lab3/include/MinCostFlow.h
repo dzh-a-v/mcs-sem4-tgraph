@@ -8,16 +8,16 @@
 struct MinCostFlowStep {
     int iteration;
     std::vector<int> path;
-    double pathFlow;
-    double pathUnitCost;
-    double cumulativeFlow;
-    double cumulativeCost;
+    int pathFlow;
+    int pathUnitCost;
+    int cumulativeFlow;
+    int cumulativeCost;
 };
 
 struct MinCostFlowResult {
-    double targetFlow;
-    double achievedFlow;
-    double totalCost;
+    int targetFlow;
+    int achievedFlow;
+    int totalCost;
     bool success;
     std::vector<MinCostFlowStep> steps;
 };
@@ -26,11 +26,11 @@ class MinCostFlowSolver {
 public:
     explicit MinCostFlowSolver(FlowNetwork& network);
 
-    MinCostFlowResult compute(int source, int sink, double targetFlow);
+    MinCostFlowResult compute(int source, int sink, int targetFlow);
 
 private:
     bool dijkstra(int source, int sink,
-                  std::unordered_map<int, double>& distances,
+                  std::unordered_map<int, int>& distances,
                   std::unordered_map<int, ResidualArc>& parent) const;
 
     FlowNetwork& m_network;

@@ -5,8 +5,6 @@
 #include <unordered_set>
 
 namespace {
-constexpr double kEps = 1e-9;
-
 std::vector<ResidualArc> reconstructResidualPath(
     int source,
     int sink,
@@ -43,10 +41,10 @@ std::vector<int> toVertexPath(int source, const std::vector<ResidualArc>& residu
 MinCostFlowSolver::MinCostFlowSolver(FlowNetwork& network)
     : m_network(network) {}
 
-MinCostFlowResult MinCostFlowSolver::compute(int source, int sink, double targetFlow) {
-    MinCostFlowResult result{targetFlow, 0.0, 0.0, false, {}};
+MinCostFlowResult MinCostFlowSolver::compute(int source, int sink, int targetFlow) {
+    MinCostFlowResult result{targetFlow, 0, 0, false, {}};
 
-    if (targetFlow <= 0.0) {
+    if (targetFlow <= 0) {
         result.success = true;
         return result;
     }
@@ -59,26 +57,26 @@ MinCostFlowResult MinCostFlowSolver::compute(int source, int sink, double target
 
     m_network.resetFlows();
 
-    std::unordered_map<int, double> distances;
+    std::unordered_map<int, int> distances;
     std::unordered_map<int, ResidualArc> parent;
     int iteration = 1;
 
-    while (result.achievedFlow + kEps < targetFlow &&
+    while (result.achievedFlow < targetFlow &&
            dijkstra(source, sink, distances, parent)) {
         std::vector<ResidualArc> residualPath = reconstructResidualPath(source, sink, parent);
         if (residualPath.empty()) {
             break;
         }
 
-        double bottleneck = targetFlow - result.achievedFlow;
-        double unitCost = 0.0;
+        int bottleneck = targetFlow - result.achievedFlow;
+        int unitCost = 0;
 
         for (const ResidualArc& arc : residualPath) {
             bottleneck = std::min(bottleneck, arc.residualCapacity);
             unitCost += arc.cost;
         }
 
-        if (bottleneck <= kEps) {
+        if (bottleneck <= 0) {
             break;
         }
 
@@ -98,15 +96,15 @@ MinCostFlowResult MinCostFlowSolver::compute(int source, int sink, double target
         });
     }
 
-    result.success = result.achievedFlow + kEps >= targetFlow;
+    result.success = result.achievedFlow >= targetFlow;
     return result;
 }
 
 bool MinCostFlowSolver::dijkstra(int source, int sink,
-                                 std::unordered_map<int, double>& distances,
+                                 std::unordered_map<int, int>& distances,
                                  std::unordered_map<int, ResidualArc>& parent) const
 {
-    constexpr double INF = std::numeric_limits<double>::infinity();
+    constexpr int INF = std::numeric_limits<int>::max();
     distances.clear();
     parent.clear();
 
@@ -124,7 +122,7 @@ bool MinCostFlowSolver::dijkstra(int source, int sink,
     }
 
     // T[v] -- distance from s to v (T : array [1..p] of real)
-    std::vector<double> T(p, INF);
+    std::vector<int> T(p, INF);
     
     // X[v] -- mark: 0 = unvisited, 1 = visited (X : array [1..p] of 0..1)
     std::vector<int> X(p, 0);
@@ -137,7 +135,7 @@ bool MinCostFlowSolver::dijkstra(int source, int sink,
     int t = sink;
 
     int startIndex = idToIndex[s];
-    T[startIndex] = 0.0;      // T[s] := 0
+    T[startIndex] = 0;        // T[s] := 0
     X[startIndex] = 1;        // X[s] := 1 (s is known)
 
     int v = s;                // v := s (current vertex)
@@ -164,7 +162,7 @@ bool MinCostFlowSolver::dijkstra(int source, int sink,
         }
 
         // m := ∞; v := 0
-        double m = INF;
+        int m = INF;
         v = 0;
         vIndex = -1;
 

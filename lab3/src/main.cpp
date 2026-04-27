@@ -218,7 +218,7 @@ int main() {
     std::unique_ptr<AdjacencyGraph> currentGraph;
     std::unique_ptr<FlowNetwork> currentFlowNetwork;
     int userChoice;
-    double lastMaxFlow = 0.0;
+    int lastMaxFlow = 0;
     int lastFlowSource = -1;
     int lastFlowSink = -1;
     bool hasMaxFlowResult = false;
@@ -250,7 +250,7 @@ int main() {
                 currentGraph = builder.generateAcyclicGraph(
                     numVertices, isDirected, wSign);
                 currentFlowNetwork.reset();
-                lastMaxFlow = 0.0;
+                lastMaxFlow = 0;
                 lastFlowSource = -1;
                 lastFlowSink = -1;
                 hasMaxFlowResult = false;
@@ -598,7 +598,7 @@ int main() {
 
                 FlowNetworkBuilder builder;
                 currentFlowNetwork = builder.buildFromGraph(*currentGraph);
-                lastMaxFlow = 0.0;
+                lastMaxFlow = 0;
                 lastFlowSource = -1;
                 lastFlowSink = -1;
                 hasMaxFlowResult = false;
@@ -702,7 +702,7 @@ int main() {
                     break;
                 }
 
-                const double targetFlow = std::floor((2.0 / 3.0) * lastMaxFlow);
+                const int targetFlow = (2 * lastMaxFlow) / 3;
 
                 std::cout << "\n--- Minimum-Cost Flow ---\n";
                 std::cout << "Using the same source/sink as the maximum-flow run: "

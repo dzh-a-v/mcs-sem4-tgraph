@@ -11,8 +11,8 @@ public:
     std::unique_ptr<FlowNetwork> buildFromGraph(const AdjacencyGraph& graph);
 
 private:
-    double generateRandomCapacity();
-    double generateRandomCost();
+    int generateRandomCapacity();
+    int generateRandomCost();
 
     AcyclicGraphBuilder m_generator;
 };

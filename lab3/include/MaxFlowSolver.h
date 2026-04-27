@@ -8,12 +8,12 @@
 struct MaxFlowStep {
     int iteration;
     std::vector<int> path;
-    double pathFlow;
-    double totalFlow;
+    int pathFlow;
+    int totalFlow;
 };
 
 struct MaxFlowResult {
-    double maxFlow;
+    int maxFlow;
     std::vector<MaxFlowStep> steps;
 };
 

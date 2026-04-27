@@ -9,9 +9,9 @@
 struct FlowEdge {
     int from;
     int to;
-    double capacity; // how much can pass through this edge at max
-    double cost; // cost of sending 1 unit of flow through this edge
-    double flow; // how much flow is currently pushed through this edge
+    int capacity; // how much can pass through this edge at max
+    int cost; // cost of sending 1 unit of flow through this edge
+    int flow; // how much flow is currently pushed through this edge
 };
 
 // edge from residual network, not from the original one
@@ -22,10 +22,10 @@ struct ResidualArc {
     int edgeIndex; // refers to the original edge from FlowEdge from m_edges
     bool forward; // true: forward through original edge;
                   // false: back (opportunity to reduce already pushed flow)
-    double residualCapacity; // if it's forward: cap - flow
-                             // if it's back: flow
-    double cost; // forward: just cost
-                 // back: negative (we're taking flow back)
+    int residualCapacity; // if it's forward: cap - flow
+                          // if it's back: flow
+    int cost; // forward: just cost
+              // back: negative (we're taking flow back)
 };
 
 /*
@@ -40,14 +40,14 @@ why this and not 0:
     - 0 might be normal value
     - I used it before to show the absence of an edge
 */
-using FlowMatrix = std::vector<std::vector<std::optional<double>>>;
+using FlowMatrix = std::vector<std::vector<std::optional<int>>>;
 
 class FlowNetwork {
 public:
     explicit FlowNetwork(bool directed = true);
 
     void addVertex(int id);
-    bool addEdge(int from, int to, double capacity, double cost);
+    bool addEdge(int from, int to, int capacity, int cost);
 
     bool hasVertex(int id) const;
     bool isDirected() const;
@@ -62,9 +62,9 @@ public:
 
     // accessors for one real edge
     std::optional<FlowEdge> getEdge(int from, int to) const;
-    std::optional<double> getCapacity(int from, int to) const;
-    std::optional<double> getCost(int from, int to) const;
-    std::optional<double> getFlow(int from, int to) const;
+    std::optional<int> getCapacity(int from, int to) const;
+    std::optional<int> getCost(int from, int to) const;
+    std::optional<int> getFlow(int from, int to) const;
 
     // make matrix views for printing
     FlowMatrix getCapacityMatrix() const;
@@ -78,7 +78,7 @@ public:
         if back:    flot -= delta
     generally connects the res. arcs logic to flows of real arcs
     */
-    void augment(int edgeIndex, bool forward, double delta); 
+    void augment(int edgeIndex, bool forward, int delta); 
 
 
 private:

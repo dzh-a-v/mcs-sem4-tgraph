@@ -1,13 +1,11 @@
 #include "include/FlowNetwork.h"
 
-#include <cmath>
 #include <iomanip>
 
 namespace {
-constexpr double kEps = 1e-9;
-
+// helper so all 3 matrix builders use the same empty "square" (filled w/ nullopt)
 FlowMatrix createEmptyMatrix(int size) {
-    return FlowMatrix(size, std::vector<std::optional<double>>(size, std::nullopt));
+    return FlowMatrix(size, std::vector<std::optional<int>>(size, std::nullopt));
 }
 }
 
@@ -19,20 +17,26 @@ void FlowNetwork::addVertex(int id) {
         return;
     }
 
+    // index is just current position in vertex list
     m_idToIndex[id] = static_cast<int>(m_vertices.size());
     m_vertices.push_back(id);
 }
 
-bool FlowNetwork::addEdge(int from, int to, double capacity, double cost) {
-    if (capacity < 0.0 || findEdgeIndex(from, to).has_value()) {
+bool FlowNetwork::addEdge(int from, int to, int capacity, int cost) {
+    // no negative capacities and no duplicate directed edge
+    if (capacity < 0 || findEdgeIndex(from, to).has_value()) {
         return false;
     }
 
+    // add endpoints if needed
     addVertex(from);
     addVertex(to);
 
+    // flow starts from 0, algorithms will change it later
     const int edgeIndex = static_cast<int>(m_edges.size());
-    m_edges.push_back({from, to, capacity, cost, 0.0});
+    m_edges.push_back({from, to, capacity, cost, 0});
+
+    // store only indexes into m_edges, so we don't duplicate the edge itself
     m_outgoing[from].push_back(edgeIndex);
     m_incoming[to].push_back(edgeIndex);
     return true;
@@ -61,12 +65,14 @@ std::vector<FlowEdge> FlowNetwork::edges() const {
 std::vector<ResidualArc> FlowNetwork::residualNeighbors(int vertex) const {
     std::vector<ResidualArc> residuals;
 
+    // 1) forward residual edges:
+    // if edge still has free capacity, we can push more flow forward
     auto outIt = m_outgoing.find(vertex);
     if (outIt != m_outgoing.end()) {
         for (int edgeIndex : outIt->second) {
             const FlowEdge& edge = m_edges[edgeIndex];
-            const double residualCapacity = edge.capacity - edge.flow;
-            if (residualCapacity > kEps) {
+            const int residualCapacity = edge.capacity - edge.flow;
+            if (residualCapacity > 0) {
                 residuals.push_back({
                     edge.from,
                     edge.to,
@@ -79,11 +85,13 @@ std::vector<ResidualArc> FlowNetwork::residualNeighbors(int vertex) const {
         }
     }
 
+    // 2) backward residual edges:
+    // if some flow was already pushed, we may "take it back"
     auto inIt = m_incoming.find(vertex);
     if (inIt != m_incoming.end()) {
         for (int edgeIndex : inIt->second) {
             const FlowEdge& edge = m_edges[edgeIndex];
-            if (edge.flow > kEps) {
+            if (edge.flow > 0) {
                 residuals.push_back({
                     edge.to,
                     edge.from,
@@ -105,10 +113,11 @@ std::optional<FlowEdge> FlowNetwork::getEdge(int from, int to) const {
         return std::nullopt;
     }
 
+    // return a copy, not reference
     return m_edges[edgeIndex.value()];
 }
 
-std::optional<double> FlowNetwork::getCapacity(int from, int to) const {
+std::optional<int> FlowNetwork::getCapacity(int from, int to) const {
     auto edge = getEdge(from, to);
     if (!edge.has_value()) {
         return std::nullopt;
@@ -116,7 +125,7 @@ std::optional<double> FlowNetwork::getCapacity(int from, int to) const {
     return edge->capacity;
 }
 
-std::optional<double> FlowNetwork::getCost(int from, int to) const {
+std::optional<int> FlowNetwork::getCost(int from, int to) const {
     auto edge = getEdge(from, to);
     if (!edge.has_value()) {
         return std::nullopt;
@@ -124,7 +133,7 @@ std::optional<double> FlowNetwork::getCost(int from, int to) const {
     return edge->cost;
 }
 
-std::optional<double> FlowNetwork::getFlow(int from, int to) const {
+std::optional<int> FlowNetwork::getFlow(int from, int to) const {
     auto edge = getEdge(from, to);
     if (!edge.has_value()) {
         return std::nullopt;
@@ -134,6 +143,8 @@ std::optional<double> FlowNetwork::getFlow(int from, int to) const {
 
 FlowMatrix FlowNetwork::getCapacityMatrix() const {
     FlowMatrix matrix = createEmptyMatrix(size());
+
+    // only real edges are written here
     for (const FlowEdge& edge : m_edges) {
         matrix[indexForVertex(edge.from)][indexForVertex(edge.to)] = edge.capacity;
     }
@@ -142,6 +153,7 @@ FlowMatrix FlowNetwork::getCapacityMatrix() const {
 
 FlowMatrix FlowNetwork::getCostMatrix() const {
     FlowMatrix matrix = createEmptyMatrix(size());
+
     for (const FlowEdge& edge : m_edges) {
         matrix[indexForVertex(edge.from)][indexForVertex(edge.to)] = edge.cost;
     }
@@ -150,6 +162,7 @@ FlowMatrix FlowNetwork::getCostMatrix() const {
 
 FlowMatrix FlowNetwork::getFlowMatrix() const {
     FlowMatrix matrix = createEmptyMatrix(size());
+
     for (const FlowEdge& edge : m_edges) {
         matrix[indexForVertex(edge.from)][indexForVertex(edge.to)] = edge.flow;
     }
@@ -157,16 +170,20 @@ FlowMatrix FlowNetwork::getFlowMatrix() const {
 }
 
 void FlowNetwork::resetFlows() {
+    // keep graph / capacities / costs, only clear current flow state
     for (FlowEdge& edge : m_edges) {
-        edge.flow = 0.0;
+        edge.flow = 0;
     }
 }
 
-void FlowNetwork::augment(int edgeIndex, bool forward, double delta) {
+void FlowNetwork::augment(int edgeIndex, bool forward, int delta) {
+    // safety check, just ignore bad index
     if (edgeIndex < 0 || edgeIndex >= static_cast<int>(m_edges.size())) {
         return;
     }
 
+    // forward residual move => add flow
+    // backward residual move => reduce previously pushed flow
     if (forward) {
         m_edges[edgeIndex].flow += delta;
     } else {
@@ -180,6 +197,7 @@ std::optional<int> FlowNetwork::findEdgeIndex(int from, int to) const {
         return std::nullopt;
     }
 
+    // scan only outgoing edges from "from", not all edges in graph
     for (int edgeIndex : outIt->second) {
         const FlowEdge& edge = m_edges[edgeIndex];
         if (edge.to == to) {
@@ -217,12 +235,9 @@ void printFlowMatrix(std::ostream& out, const FlowMatrix& matrix,
         out << std::setw(5) << vertexIds[row] << " |";
         for (size_t col = 0; col < n; ++col) {
             if (matrix[row][col].has_value()) {
-                double value = matrix[row][col].value();
-                if (std::abs(value) < kEps) {
-                    value = 0.0;
-                }
-                out << std::setw(10) << value;
+                out << std::setw(10) << matrix[row][col].value();
             } else {
+                // same convention as in other parts of the project
                 out << std::setw(10) << "i";
             }
         }
