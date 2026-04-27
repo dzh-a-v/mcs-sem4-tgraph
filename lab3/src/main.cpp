@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <limits>
 #include <cmath>
+#include <cctype>
 #include <string>
 #include "include/Graph.h"
 #include "include/Generator.h"
@@ -63,6 +64,39 @@ int readInteger(const std::string& prompt) {
         std::cout << "Invalid input. " << prompt;
     }
     return value;
+}
+
+int readNonNegativeIntegerStrict(const std::string& prompt, const std::string& errorMessage) {
+    std::cout << prompt;
+
+    while (true) {
+        std::string token;
+        if (!(std::cin >> token)) {
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            std::cout << errorMessage;
+            continue;
+        }
+
+        bool allDigits = !token.empty();
+        for (unsigned char ch : token) {
+            if (!std::isdigit(ch)) {
+                allDigits = false;
+                break;
+            }
+        }
+
+        if (!allDigits) {
+            std::cout << errorMessage;
+            continue;
+        }
+
+        try {
+            return std::stoi(token);
+        } catch (const std::exception&) {
+            std::cout << errorMessage;
+        }
+    }
 }
 
 WeightSign selectWeightSign() {
@@ -340,18 +374,21 @@ int main() {
                     break;
                 }
                 
-                int k = readInteger("\nPath length k (number of edges): ");
-                
-                //try {
+                int k = readNonNegativeIntegerStrict(
+                    "\nPath length k (number of edges): ",
+                    "[ERROR] k must be a non-negative integer number of edges: "
+                );
+
+                try {
                     KPathCalculator calculator(*currentGraph);
                     auto result = calculator.compute(k);
                     
                     auto vertexIds = currentGraph->vertexIds();
                     displayMatrix("Minimum Weight Paths", result.minWeights, vertexIds);
                     displayMatrix("Maximum Weight Paths", result.maxWeights, vertexIds);
-                //} catch (const std::exception& ex) { // i don't need it for now. FTF
-                //    std::cout << "[ERROR] " << ex.what() << "\n";
-                //}
+                } catch (const std::exception& ex) {
+                    std::cout << "[ERROR] " << ex.what() << "\n";
+                }
                 break;
             }
             
