@@ -5,6 +5,8 @@
 #include <unordered_set>
 
 namespace {
+// same idea as in max-flow:
+// recover residual path by going from sink back to source
 std::vector<ResidualArc> reconstructResidualPath(
     int source,
     int sink,
@@ -26,6 +28,7 @@ std::vector<ResidualArc> reconstructResidualPath(
     return path;
 }
 
+// helper just for pretty output
 std::vector<int> toVertexPath(int source, const std::vector<ResidualArc>& residualPath) {
     std::vector<int> path;
     path.push_back(source);
@@ -44,23 +47,29 @@ MinCostFlowSolver::MinCostFlowSolver(FlowNetwork& network)
 MinCostFlowResult MinCostFlowSolver::compute(int source, int sink, int targetFlow) {
     MinCostFlowResult result{targetFlow, 0, 0, false, {}};
 
+    // sending 0 units is trivially successful
     if (targetFlow <= 0) {
         result.success = true;
         return result;
     }
 
+    // bad source/sink => no answer
     if (source == sink ||
         !m_network.hasVertex(source) ||
         !m_network.hasVertex(sink)) {
         return result;
     }
 
+    // solve min-cost-flow from clean zero state
     m_network.resetFlows();
 
     std::unordered_map<int, int> distances;
     std::unordered_map<int, ResidualArc> parent;
     int iteration = 1;
 
+    // each iteration:
+    // 1) find shortest path by cost in residual network
+    // 2) push as much as possible through it
     while (result.achievedFlow < targetFlow &&
            dijkstra(source, sink, distances, parent)) {
         std::vector<ResidualArc> residualPath = reconstructResidualPath(source, sink, parent);
@@ -68,22 +77,28 @@ MinCostFlowResult MinCostFlowSolver::compute(int source, int sink, int targetFlo
             break;
         }
 
+        // initially we can still send only "what is left" to target
         int bottleneck = targetFlow - result.achievedFlow;
         int unitCost = 0;
 
+        // then restrict it by capacities on path
+        // also sum full path cost for one unit of flow
         for (const ResidualArc& arc : residualPath) {
             bottleneck = std::min(bottleneck, arc.residualCapacity);
             unitCost += arc.cost;
         }
 
+        // just safety
         if (bottleneck <= 0) {
             break;
         }
 
+        // push flow through all arcs of this path
         for (const ResidualArc& arc : residualPath) {
             m_network.augment(arc.edgeIndex, arc.forward, bottleneck);
         }
 
+        // update totals
         result.achievedFlow += bottleneck;
         result.totalCost += bottleneck * unitCost;
         result.steps.push_back({
@@ -108,6 +123,7 @@ bool MinCostFlowSolver::dijkstra(int source, int sink,
     distances.clear();
     parent.clear();
 
+    // same guard as in original dijkstra
     if (!m_network.hasVertex(source)) {
         return false;
     }
@@ -129,6 +145,8 @@ bool MinCostFlowSolver::dijkstra(int source, int sink,
     
     // H[v] -- predecessor of v on shortest path (H : array [1..p] of 0..p)
     std::vector<int> H(p, -1);
+    // extra thing for flow lab:
+    // remember the exact residual arc, not only predecessor vertex
     std::vector<std::optional<ResidualArc>> parentArcs(p, std::nullopt);
 
     int s = source;
@@ -193,6 +211,7 @@ bool MinCostFlowSolver::dijkstra(int source, int sink,
         if (T[i] != INF) {
             distances[vertexIds[i]] = T[i];
         }
+        // parent for flow solver = exact residual arc to this vertex
         if (parentArcs[i].has_value()) {
             parent[vertexIds[i]] = parentArcs[i].value();
         }
