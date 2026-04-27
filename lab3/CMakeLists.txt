@@ -20,4 +20,5 @@ add_executable(lab3
     src/FlowNetworkBuilder.cpp
     src/MaxFlowSolver.cpp
     src/MinCostFlow.cpp
+    src/MermaidExporter.cpp
 )

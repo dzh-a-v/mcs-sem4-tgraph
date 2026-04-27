@@ -14,6 +14,7 @@
 #include "include/FlowNetworkBuilder.h"
 #include "include/MaxFlowSolver.h"
 #include "include/MinCostFlow.h"
+#include "include/MermaidExporter.h"
 
 // ============================================================================
 // Helper Functions
@@ -40,6 +41,7 @@ void showMenu() {
     std::cout << "  15. Find maximum flow\n";
     std::cout << "  16. Find minimum-cost flow for [2/3 * max]\n";
     std::cout << "  17. Show flow network details\n";
+    std::cout << "  99. Export current graph to Mermaid\n";
     std::cout << "  0. Quit\n";
     std::cout << "===============================\n";
     std::cout << "> ";
@@ -733,6 +735,24 @@ int main() {
             case 17:  // Flow Network Details
             {
                 showFlowNetworkDetails(currentFlowNetwork);
+                break;
+            }
+
+            // =========================================================
+            case 99:  // Export Mermaid
+            {
+                if (!currentGraph) {
+                    std::cout << "[!] Generate a graph first\n";
+                    break;
+                }
+
+                try {
+                    const auto outputPath = MermaidExporter::exportGraph(*currentGraph);
+                    std::cout << "\n[OK] Mermaid code written to:\n"
+                              << "    " << outputPath.string() << "\n";
+                } catch (const std::exception& ex) {
+                    std::cout << "[ERROR] " << ex.what() << "\n";
+                }
                 break;
             }
 
