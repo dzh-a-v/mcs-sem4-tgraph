@@ -11,7 +11,7 @@ public:
     std::unique_ptr<FlowNetwork> buildFromGraph(const AdjacencyGraph& graph);
 
 private:
-    double deriveCapacity(double weight) const;
+    double generateRandomCapacity();
     double generateRandomCost();
 
     AcyclicGraphBuilder m_generator;
