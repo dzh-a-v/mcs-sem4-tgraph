@@ -50,6 +50,31 @@ std::filesystem::path MermaidExporter::exportGraph(const AdjacencyGraph& graph,
     return outputPath;
 }
 
+std::filesystem::path MermaidExporter::exportFlowNetwork(const FlowNetwork& network,
+                                                         const std::string& fileName) {
+    const std::filesystem::path outputPath = executableDirectory() / fileName;
+    std::ofstream out(outputPath);
+    if (!out) {
+        throw std::runtime_error("Failed to create Mermaid file");
+    }
+
+    out << "graph LR\n";
+
+    for (int vertexId : network.vertexIds()) {
+        out << "    v" << vertexId << "[\"" << vertexId << "\"]\n";
+    }
+
+    for (const FlowEdge& edge : network.edges()) {
+        out << "    v" << edge.from
+            << " -->|\"cap=" << formatWeight(edge.capacity)
+            << ", cost=" << formatWeight(edge.cost)
+            << ", flow=" << formatWeight(edge.flow) << "\"| "
+            << "v" << edge.to << "\n";
+    }
+
+    return outputPath;
+}
+
 std::filesystem::path MermaidExporter::executableDirectory() {
     char buffer[MAX_PATH];
     const DWORD length = GetModuleFileNameA(nullptr, buffer, MAX_PATH);
