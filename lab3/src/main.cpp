@@ -599,8 +599,8 @@ int main() {
                 hasMaxFlowResult = false;
 
                 std::cout << "\n[OK] Flow network built from the current graph.\n";
-                std::cout << "    Capacity(u, v) = max(1, |weight(u, v)|)\n";
-                std::cout << "    Cost(u, v) = original edge weight\n";
+                std::cout << "    Capacity(u, v) is generated randomly via the program generator\n";
+                std::cout << "    Cost(u, v) is generated randomly via the program generator\n";
                 std::cout << "    Vertices: " << currentFlowNetwork->size() << "\n";
                 std::cout << "    Edges:    " << currentFlowNetwork->edges().size() << "\n";
                 break;
