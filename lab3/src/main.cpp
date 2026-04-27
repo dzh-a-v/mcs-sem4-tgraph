@@ -21,20 +21,23 @@
 // Helper Functions
 // ============================================================================
 
-void showMenu() {
+void showMenu(bool hideLegacySections) {
     std::cout << "\n========== MAIN MENU ==========\n";
-    std::cout << "  1. Generate random graph\n";
-    std::cout << "  2. Calculate eccentricities & center\n";
-    std::cout << "  3. Shimbell's method (k-edge paths)\n";
-    std::cout << "  4. Find all paths between vertices\n";
-    std::cout << "  5. Show graph details\n";
-    std::cout << "  6. Compare distribution statistics\n";
-    std::cout << "  7. Show adjacency matrix\n";
-    std::cout << "  8. Show weight matrix (Shimbell k=1)\n";
-    std::cout << "\n  --- Lab 2 ---\n";
-    std::cout << "  9. BFS traversal\n";
-    std::cout << "  10. Dijkstra's shortest path\n";
-    std::cout << "  11. Compare BFS vs Dijkstra (speed)\n";
+    if (!hideLegacySections) {
+        std::cout << "\n  --- Lab 1 ---\n";
+        std::cout << "  1. Generate random graph\n";
+        std::cout << "  2. Calculate eccentricities & center\n";
+        std::cout << "  3. Shimbell's method (k-edge paths)\n";
+        std::cout << "  4. Find all paths between vertices\n";
+        std::cout << "  5. Show graph details\n";
+        std::cout << "  6. Compare distribution statistics\n";
+        std::cout << "  7. Show adjacency matrix\n";
+        std::cout << "  8. Show weight matrix (Shimbell k=1)\n";
+        std::cout << "\n  --- Lab 2 ---\n";
+        std::cout << "  9. BFS traversal\n";
+        std::cout << "  10. Dijkstra's shortest path\n";
+        std::cout << "  11. Compare BFS vs Dijkstra (speed)\n";
+    }
     std::cout << "\n  --- Lab 3 ---\n";
     std::cout << "  12. Build flow network from current directed graph\n";
     std::cout << "  13. Show capacity matrix\n";
@@ -43,6 +46,7 @@ void showMenu() {
     std::cout << "  16. Find minimum-cost flow for [2/3 * max]\n";
     std::cout << "  17. Show flow network details\n";
     std::cout << "\n  --- Custom ---\n";
+    std::cout << "  100. Toggle hiding Lab 1 and Lab 2 in menu\n";
     std::cout << "  101. Export current graph to Mermaid\n";
     std::cout << "  102. Export current flow network to Mermaid\n";
     std::cout << "  0. Quit\n";
@@ -218,9 +222,10 @@ int main() {
     int lastFlowSource = -1;
     int lastFlowSink = -1;
     bool hasMaxFlowResult = false;
+    bool hideLegacySections = false;
     
     do {
-        showMenu();
+        showMenu(hideLegacySections);
         userChoice = readInteger("");
         
         switch (userChoice) {
@@ -738,6 +743,16 @@ int main() {
             case 17:  // Flow Network Details
             {
                 showFlowNetworkDetails(currentFlowNetwork);
+                break;
+            }
+
+            // =========================================================
+            case 100:  // Toggle hiding legacy sections
+            {
+                hideLegacySections = !hideLegacySections;
+                std::cout << (hideLegacySections
+                    ? "[OK] Lab 1 and Lab 2 are now hidden in the menu.\n"
+                    : "[OK] Lab 1 and Lab 2 are now shown in the menu.\n");
                 break;
             }
 
