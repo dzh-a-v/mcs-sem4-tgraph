@@ -4,6 +4,9 @@
 #include <cmath>
 #include <cctype>
 #include <string>
+#include <tuple>
+#include <vector>
+#include <algorithm>
 #include "include/Graph.h"
 #include "include/Generator.h"
 #include "include/ShimbellMethod.h"
@@ -17,6 +20,10 @@
 #include "include/MaxFlowSolver.h"
 #include "include/MinCostFlow.h"
 #include "include/MermaidExporter.h"
+#include "include/Kirchhoff.h"
+#include "include/Kruskal.h"
+#include "include/PruferCode.h"
+#include "include/MaxMatching.h"
 
 // ============================================================================
 // Helper Functions
@@ -46,10 +53,18 @@ void showMenu(bool hideLegacySections) {
     std::cout << "  15. Find maximum flow\n";
     std::cout << "  16. Find minimum-cost flow for [2/3 * max]\n";
     std::cout << "  17. Show flow network details\n";
+    std::cout << "\n  --- Lab 4 ---\n";
+    std::cout << "  18. Count spanning trees (Kirchhoff's theorem)\n";
+    std::cout << "  19. Build minimum spanning tree (Kruskal)\n";
+    std::cout << "  20. Show spanning tree details\n";
+    std::cout << "  21. Encode spanning tree to Prufer code\n";
+    std::cout << "  22. Decode last Prufer code back to a tree\n";
+    std::cout << "  23. Maximal matching (independent edge set)\n";
     std::cout << "\n  --- Custom ---\n";
     std::cout << "  100. Toggle hiding Lab 1 and Lab 2 in menu\n";
     std::cout << "  101. Export current graph to Mermaid\n";
     std::cout << "  102. Export current flow network to Mermaid\n";
+    std::cout << "  103. Export current spanning tree to Mermaid\n";
     std::cout << "  0. Quit\n";
     std::cout << "===============================\n";
     std::cout << "> ";
@@ -266,6 +281,9 @@ bool sinkHasOnlyZeroCapacityIncomingEdges(const FlowNetwork& network, int sink) 
 int main() {
     std::unique_ptr<AdjacencyGraph> currentGraph;
     std::unique_ptr<FlowNetwork> currentFlowNetwork;
+    std::unique_ptr<AdjacencyGraph> currentSpanningTree;
+    PruferCode lastPruferCode;
+    bool hasPruferCode = false;
     int userChoice;
     int lastMaxFlow = 0;
     int lastFlowSource = -1;
@@ -299,6 +317,9 @@ int main() {
                 currentGraph = builder.generateAcyclicGraph(
                     numVertices, isDirected, wSign);
                 currentFlowNetwork.reset();
+                currentSpanningTree.reset();
+                hasPruferCode = false;
+                lastPruferCode = PruferCode{};
                 lastMaxFlow = 0;
                 lastFlowSource = -1;
                 lastFlowSink = -1;
@@ -808,6 +829,269 @@ int main() {
             }
 
             // =========================================================
+            case 18:  // Count spanning trees (Kirchhoff)
+            {
+                if (!currentGraph) {
+                    std::cout << "[!] Generate a graph first\n";
+                    break;
+                }
+                if (currentGraph->isDirected()) {
+                    std::cout << "[!] Lab 4 requires an undirected graph. "
+                                 "Generate an undirected graph first.\n";
+                    break;
+                }
+
+                KirchhoffCounter counter(*currentGraph);
+                KirchhoffResult result = counter.compute();
+
+                std::cout << "\n=== KIRCHHOFF MATRIX (B = D - A) ===\n";
+                std::cout << "Diagonal: degree of vertex.\n";
+                std::cout << "Off-diagonal: -1 if edge exists, 0 otherwise.\n\n";
+
+                const auto vertexIds = currentGraph->vertexIds();
+                const int n = currentGraph->size();
+
+                std::cout << "      ";
+                for (int id : vertexIds) std::cout << std::setw(6) << id;
+                std::cout << "\n      ";
+                for (int i = 0; i < n; ++i) std::cout << "------";
+                std::cout << "\n";
+                for (int i = 0; i < n; ++i) {
+                    std::cout << std::setw(5) << vertexIds[i] << " |";
+                    for (int j = 0; j < n; ++j) {
+                        std::cout << std::setw(6) << result.kirchhoffMatrix[i][j];
+                    }
+                    std::cout << "\n";
+                }
+
+                std::cout << "\n[OK] Number of spanning trees = "
+                          << result.spanningTreeCount << "\n";
+                if (result.spanningTreeCount == 0 && n > 1) {
+                    std::cout << "[!] Zero spanning trees -- the graph is disconnected.\n";
+                }
+                break;
+            }
+
+            // =========================================================
+            case 19:  // Build MST (Kruskal)
+            {
+                if (!currentGraph) {
+                    std::cout << "[!] Generate a graph first\n";
+                    break;
+                }
+                if (currentGraph->isDirected()) {
+                    std::cout << "[!] Lab 4 requires an undirected graph. "
+                                 "Generate an undirected graph first.\n";
+                    break;
+                }
+
+                KruskalMST kruskal(*currentGraph);
+                KruskalResult result = kruskal.buildMST();
+
+                std::cout << "\n=== KRUSKAL'S ALGORITHM ===\n";
+                std::cout << "Edges added (in order, sorted by ascending weight):\n";
+                for (size_t i = 0; i < result.chosenEdges.size(); ++i) {
+                    const auto& e = result.chosenEdges[i];
+                    std::cout << "  " << (i + 1) << ". v" << e.from
+                              << " --- v" << e.to
+                              << "  (weight = " << e.weight << ")\n";
+                }
+
+                std::cout << "\nTotal weight of MST: " << result.totalWeight << "\n";
+                std::cout << "Edges in MST:        " << result.chosenEdges.size()
+                          << " of " << (currentGraph->size() - 1) << " expected\n";
+
+                if (!result.wasConnected) {
+                    std::cout << "[!] Graph was disconnected -- result is a "
+                                 "spanning forest, not a tree.\n";
+                }
+
+                currentSpanningTree = std::move(result.spanningTree);
+                hasPruferCode = false;  // tree has changed, invalidate old code
+                lastPruferCode = PruferCode{};
+                std::cout << "\n[OK] Spanning tree saved as the current MST.\n";
+                break;
+            }
+
+            // =========================================================
+            case 20:  // Show MST details
+            {
+                if (!currentSpanningTree) {
+                    std::cout << "[!] Build the spanning tree first (option 19)\n";
+                    break;
+                }
+
+                std::cout << "\n=== SPANNING TREE ===\n";
+                std::cout << "Type:     "
+                          << (currentSpanningTree->isDirected() ? "Directed" : "Undirected")
+                          << "\n";
+                std::cout << "Vertices: " << currentSpanningTree->size() << "\n";
+                std::cout << "Edges:    " << currentSpanningTree->edges().size() << "\n";
+
+                double totalWeight = 0.0;
+                std::cout << "\nEdges:\n";
+                for (const WeightedEdge& edge : currentSpanningTree->edges()) {
+                    std::cout << "  v" << edge.from << " --- v" << edge.to
+                              << "  (weight = " << edge.weight << ")\n";
+                    totalWeight += edge.weight;
+                }
+                std::cout << "\nTotal weight: " << totalWeight << "\n";
+                break;
+            }
+
+            // =========================================================
+            case 21:  // Encode tree to Prufer code
+            {
+                if (!currentSpanningTree) {
+                    std::cout << "[!] Build the spanning tree first (option 19)\n";
+                    break;
+                }
+
+                lastPruferCode = PruferEncoder::encode(*currentSpanningTree);
+                hasPruferCode = true;
+
+                const int p = currentSpanningTree->size();
+                std::cout << "\n=== PRUFER CODE ===\n";
+                std::cout << "Tree has " << p << " vertices, code length = p - 1 = "
+                          << (p - 1) << "\n\n";
+
+                std::cout << "Code:    [";
+                for (size_t i = 0; i < lastPruferCode.code.size(); ++i) {
+                    std::cout << lastPruferCode.code[i];
+                    if (i + 1 < lastPruferCode.code.size()) std::cout << ", ";
+                }
+                std::cout << "]\n";
+
+                std::cout << "Weights: [";
+                for (size_t i = 0; i < lastPruferCode.weights.size(); ++i) {
+                    std::cout << lastPruferCode.weights[i];
+                    if (i + 1 < lastPruferCode.weights.size()) std::cout << ", ";
+                }
+                std::cout << "]\n";
+
+                std::cout << "\n(Step i: removed smallest leaf -> recorded its "
+                             "neighbor in code[i] and the edge weight in weights[i])\n";
+                break;
+            }
+
+            // =========================================================
+            case 22:  // Decode last Prufer code
+            {
+                if (!hasPruferCode) {
+                    std::cout << "[!] Encode a tree first (option 21)\n";
+                    break;
+                }
+                if (!currentSpanningTree) {
+                    std::cout << "[!] Need the original tree to know its vertex set\n";
+                    break;
+                }
+
+                auto decoded = PruferEncoder::decode(
+                    lastPruferCode, currentSpanningTree->vertexIds());
+
+                std::cout << "\n=== DECODED TREE ===\n";
+                std::cout << "Vertices: " << decoded->size() << "\n";
+                std::cout << "Edges:    " << decoded->edges().size() << "\n\n";
+
+                std::cout << "Edges:\n";
+                for (const WeightedEdge& edge : decoded->edges()) {
+                    std::cout << "  v" << edge.from << " --- v" << edge.to
+                              << "  (weight = " << edge.weight << ")\n";
+                }
+
+                // Round-trip check: decoded edges should match the original tree.
+                auto originalEdges = currentSpanningTree->edges();
+                auto decodedEdges = decoded->edges();
+
+                auto edgeKey = [](const WeightedEdge& e) {
+                    int a = e.from, b = e.to;
+                    if (a > b) std::swap(a, b);
+                    return std::make_tuple(a, b, e.weight);
+                };
+
+                std::vector<std::tuple<int, int, double>> originalKeys, decodedKeys;
+                for (const auto& e : originalEdges) originalKeys.push_back(edgeKey(e));
+                for (const auto& e : decodedEdges)  decodedKeys.push_back(edgeKey(e));
+                std::sort(originalKeys.begin(), originalKeys.end());
+                std::sort(decodedKeys.begin(),  decodedKeys.end());
+
+                if (originalKeys == decodedKeys) {
+                    std::cout << "\n[OK] Round-trip successful: decoded tree "
+                                 "matches the original (edges + weights).\n";
+                } else {
+                    std::cout << "\n[!] Round-trip MISMATCH between original and decoded tree.\n";
+                }
+                break;
+            }
+
+            // =========================================================
+            case 23:  // Maximal matching
+            {
+                if (!currentGraph) {
+                    std::cout << "[!] Generate a graph first\n";
+                    break;
+                }
+                if (currentGraph->isDirected()) {
+                    std::cout << "[!] Lab 4 requires an undirected graph. "
+                                 "Generate an undirected graph first.\n";
+                    break;
+                }
+
+                std::cout << "\n--- Maximal Matching (independent edge set) ---\n";
+                std::cout << "Run on:\n";
+                std::cout << "  1. Original graph\n";
+                std::cout << "  2. Spanning tree (option 19 must be done first)\n";
+                std::cout << "> ";
+
+                int targetOption;
+                while (!(std::cin >> targetOption) ||
+                       (targetOption != 1 && targetOption != 2)) {
+                    std::cin.clear();
+                    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                    std::cout << "Invalid. Enter 1 or 2: ";
+                }
+
+                const AdjacencyGraph* target = nullptr;
+                std::string targetName;
+                if (targetOption == 1) {
+                    target = currentGraph.get();
+                    targetName = "original graph";
+                } else {
+                    if (!currentSpanningTree) {
+                        std::cout << "[!] Build the spanning tree first (option 19)\n";
+                        break;
+                    }
+                    target = currentSpanningTree.get();
+                    targetName = "spanning tree";
+                }
+
+                GreedyMaximalMatching matcher(*target);
+                MatchingResult result = matcher.compute();
+
+                std::cout << "\n=== MAXIMAL MATCHING on " << targetName << " ===\n";
+                std::cout << "Matching size: " << result.matchingSize << "\n";
+
+                std::cout << "\nMatching edges:\n";
+                if (result.matchingEdges.empty()) {
+                    std::cout << "  (none)\n";
+                } else {
+                    for (const WeightedEdge& edge : result.matchingEdges) {
+                        std::cout << "  v" << edge.from << " --- v" << edge.to
+                                  << "  (weight = " << edge.weight << ")\n";
+                    }
+                }
+
+                if (result.unmatchedVertices.empty()) {
+                    std::cout << "\n[OK] Matching is PERFECT -- every vertex is covered.\n";
+                } else {
+                    std::cout << "\nUnmatched vertices: ";
+                    for (int v : result.unmatchedVertices) std::cout << "v" << v << " ";
+                    std::cout << "\n";
+                }
+                break;
+            }
+
+            // =========================================================
             case 100:  // Toggle hiding legacy sections
             {
                 hideLegacySections = !hideLegacySections;
@@ -846,6 +1130,25 @@ int main() {
                 try {
                     const auto outputPath = MermaidExporter::exportGraph(*currentGraph);
                     std::cout << "\n[OK] Mermaid code written to:\n"
+                              << "    " << outputPath.string() << "\n";
+                } catch (const std::exception& ex) {
+                    std::cout << "[ERROR] " << ex.what() << "\n";
+                }
+                break;
+            }
+
+            // =========================================================
+            case 103:  // Export Spanning Tree Mermaid
+            {
+                if (!currentSpanningTree) {
+                    std::cout << "[!] Build the spanning tree first (option 19)\n";
+                    break;
+                }
+
+                try {
+                    const auto outputPath = MermaidExporter::exportGraph(
+                        *currentSpanningTree, "generated_spanning_tree.mmd");
+                    std::cout << "\n[OK] Spanning-tree Mermaid code written to:\n"
                               << "    " << outputPath.string() << "\n";
                 } catch (const std::exception& ex) {
                     std::cout << "[ERROR] " << ex.what() << "\n";

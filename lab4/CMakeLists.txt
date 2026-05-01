@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.10)
-project(lab3)
+project(lab4)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include_directories(${CMAKE_SOURCE_DIR})
 
-add_executable(lab3
+add_executable(lab4
     src/main.cpp
     src/Graph.cpp
     src/Generator.cpp
@@ -21,4 +21,8 @@ add_executable(lab3
     src/MaxFlowSolver.cpp
     src/MinCostFlow.cpp
     src/MermaidExporter.cpp
+    src/Kirchhoff.cpp
+    src/Kruskal.cpp
+    src/PruferCode.cpp
+    src/MaxMatching.cpp
 )
