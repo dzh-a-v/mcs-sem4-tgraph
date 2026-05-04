@@ -43,10 +43,14 @@ void showMenu(bool hideLab1) {
         std::cout << "  6. Compare distribution statistics\n";
         std::cout << "  7. Show adjacency matrix\n";
         std::cout << "  8. Show weight matrix (Shimbell k=1)\n";
+    }
+    if (!hideLab2) {
         std::cout << "\n  --- Lab 2 ---\n";
         std::cout << "  9. BFS traversal\n";
         std::cout << "  10. Dijkstra's shortest path\n";
         std::cout << "  11. Compare BFS vs Dijkstra (speed)\n";
+    }
+    if (!hideLab3) {
         std::cout << "\n  --- Lab 3 ---\n";
         std::cout << "  12. Build flow network from current directed graph\n";
         std::cout << "  13. Show capacity matrix\n";
@@ -54,6 +58,8 @@ void showMenu(bool hideLab1) {
         std::cout << "  15. Find maximum flow\n";
         std::cout << "  16. Find minimum-cost flow for [2/3 * max]\n";
         std::cout << "  17. Show flow network details\n";
+    }  
+    if (!hideLab4) {  
         std::cout << "\n  --- Lab 4 ---\n";
         std::cout << "  18. Count spanning trees (Kirchhoff's theorem)\n";
         std::cout << "  19. Build minimum spanning tree (Kruskal)\n";
@@ -62,22 +68,26 @@ void showMenu(bool hideLab1) {
         std::cout << "  22. Decode last Prufer code back to a tree\n";
         std::cout << "  23. Maximal matching (independent edge set)\n";
     }
-    std::cout << "\n  --- Lab 5 ---\n";
-    std::cout << "  24. Build Eulerian cycle (modify graph if needed)\n";
-    std::cout << "  25. Show fundamental cut-set system (uses MST)\n";
-    std::cout << "  26. Combine cuts via symmetric difference\n";
-    std::cout << "\n  --- Custom ---\n";
-    std::cout << "  1001. Toggle hiding Lab 1 in menu\n";
-    std::cout << "  1002. Toggle hiding Lab 2 in menu\n";
-    std::cout << "  1003. Toggle hiding Lab 3 in menu\n";
-    std::cout << "  1004. Toggle hiding Lab 4 in menu\n";
-    std::cout << "  1005. Toggle hiding Lab 5 in menu\n";
-    std::cout << "  1006. Toggle hiding Custom in menu\n";
-    std::cout << "  101. Export current graph to Mermaid\n";
-    std::cout << "  102. Export current flow network to Mermaid\n";
-    std::cout << "  103. Export current spanning tree to Mermaid\n";
-    std::cout << "  0. Quit\n";
-    std::cout << "===============================\n";
+    if (!hideLab5) {
+        std::cout << "\n  --- Lab 5 ---\n";
+        std::cout << "  24. Build Eulerian cycle (modify graph if needed)\n";
+        std::cout << "  25. Show fundamental cut-set system (uses MST)\n";
+        std::cout << "  26. Combine cuts via symmetric difference\n";
+    }
+    if (!hideCustom) {
+        std::cout << "\n  --- Custom ---\n";
+        std::cout << "  1001. Toggle hiding Lab 1 in menu\n";
+        std::cout << "  1002. Toggle hiding Lab 2 in menu\n";
+        std::cout << "  1003. Toggle hiding Lab 3 in menu\n";
+        std::cout << "  1004. Toggle hiding Lab 4 in menu\n";
+        std::cout << "  1005. Toggle hiding Lab 5 in menu\n";
+        std::cout << "  1006. Toggle hiding Custom in menu\n";
+        std::cout << "  101. Export current graph to Mermaid\n";
+        std::cout << "  102. Export current flow network to Mermaid\n";
+        std::cout << "  103. Export current spanning tree to Mermaid\n";
+        std::cout << "  0. Quit\n";
+        std::cout << "===============================\n";
+    }
     std::cout << "> ";
 }
 
