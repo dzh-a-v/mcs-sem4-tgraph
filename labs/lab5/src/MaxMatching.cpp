@@ -1,3 +1,13 @@
+/*
+matching ← ∅
+matched ← ∅                    // вершины, уже покрытые матчингом
+для каждого ребра (u, v) графа:
+    если u ∉ matched и v ∉ matched:
+        matching ← matching ∪ {(u, v)}
+        matched ← matched ∪ {u, v}
+вернуть matching
+*/
+
 #include "include/MaxMatching.h"
 #include <algorithm>
 #include <unordered_set>

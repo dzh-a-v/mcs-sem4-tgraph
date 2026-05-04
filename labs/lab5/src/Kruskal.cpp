@@ -72,6 +72,7 @@ KruskalResult KruskalMST::buildMST() const {
     KruskalResult result;
     result.totalWeight = 0.0;
     result.wasConnected = true;
+    ////////// T := ∅
 
     const int n = m_graph.size();
 
@@ -113,31 +114,55 @@ KruskalResult KruskalMST::buildMST() const {
             }
             return a.to < b.to;
         });
+    ////////// Вход: список E рёбер графа G с длинами, упорядоченный в порядке возрастания длин
 
     DisjointSetUnion dsu(n);
     int edgesAdded = 0;
     const int targetEdgeCount = n - 1;
+    
+    int k = 0;  // индекс в массиве allEdges (0-based вместо 1-based)
+    ////////// k := 1 { номер рассматриваемого ребра }
 
-    // Process edges in ascending weight order.
-    // We could break out as soon as edgesAdded == targetEdgeCount,
-    // but iterating to the end is harmless and keeps the code simple.
-    for (const WeightedEdge& edge : allEdges) {
-        if (edgesAdded == targetEdgeCount) {
-            break;  // tree is complete
+    // for i from 1 to p - 1 do
+    // (добавляем ровно n-1 ребро для остовного дерева)
+    while (edgesAdded < targetEdgeCount && k < static_cast<int>(allEdges.size())) {
+        ////////// for i from 1 to p - 1 do
+        
+        // while z(T + E[k]) > 0 do
+        // (проверяем, образует ли добавление ребра E[k] цикл)
+        // z() > 0 означает, что ребро создаёт цикл, поэтому пропускаем его
+        while (k < static_cast<int>(allEdges.size())) {
+            const WeightedEdge& edge = allEdges[k];
+            const int i = idToIndex.at(edge.from);
+            const int j = idToIndex.at(edge.to);
+            
+            // dsu.unite() возвращает false, если вершины уже в одном множестве
+            // (т.е. z(T + E[k]) > 0 - добавление создаст цикл)
+            if (dsu.unite(i, j)) {
+                break;  // цикл не образуется, можно добавить ребро
+            }
+            
+            ++k;
+            ////////// k := k + 1 { пропустить это ребро }
         }
-
-        const int i = idToIndex.at(edge.from);
-        const int j = idToIndex.at(edge.to);
-
-        // unite() returns true if the endpoints were in different components,
-        // i.e. adding this edge would NOT create a cycle.
-        if (dsu.unite(i, j)) {
-            result.spanningTree->addEdge(edge.from, edge.to, edge.weight);
-            result.chosenEdges.push_back(edge);
-            result.totalWeight += edge.weight;
-            ++edgesAdded;
+        ////////// while z(T + E[k]) > 0 do
+        
+        // Если достигли конца списка рёбер, но не набрали n-1 ребро
+        if (k >= static_cast<int>(allEdges.size())) {
+            break;
         }
+        
+        const WeightedEdge& chosenEdge = allEdges[k];
+        result.spanningTree->addEdge(chosenEdge.from, chosenEdge.to, chosenEdge.weight);
+        result.chosenEdges.push_back(chosenEdge);
+        result.totalWeight += chosenEdge.weight;
+        ++edgesAdded;
+        ////////// T := T + E[k] { добавить это ребро в SST }
+        
+        ++k;
+        ////////// k := k + 1 { и исключить его из рассмотрения }
     }
+    ////////// end for
 
     // If we added fewer than n-1 edges, the input graph was disconnected
     // and what we produced is a spanning forest, not a spanning tree.
@@ -146,4 +171,5 @@ KruskalResult KruskalMST::buildMST() const {
     }
 
     return result;
+    ////////// Выход: множество T рёбер кратчайшего остова
 }

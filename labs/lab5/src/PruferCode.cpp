@@ -46,6 +46,7 @@ PruferCode PruferEncoder::encode(const AdjacencyGraph& tree) {
     // structures.
 
     std::vector<int> aliveVertices = tree.vertexIds();
+    ////////// V := множество вершин дерева (копии для удаления)
 
     std::unordered_map<int, std::unordered_set<int>> adjacency;
     std::unordered_map<int, int> currentDegree;
@@ -69,15 +70,23 @@ PruferCode PruferEncoder::encode(const AdjacencyGraph& tree) {
         currentDegree[edge.to] += 1;
         edgeWeight[edgeKey(edge.from, edge.to)] = edge.weight;
     }
+    ////////// Γ(v) — списки смежности (adjacency)
+    ////////// d(k) — степени вершин (currentDegree)
 
     // Main loop: exactly p - 1 iterations, per slide 30.
     // Each iteration removes the smallest-ID leaf and writes down (neighbor, weight).
     result.code.reserve(p - 1);
     result.weights.reserve(p - 1);
 
+    // for i from 1 to p - 1 do
     for (int i = 0; i < p - 1; ++i) {
+        ////////// for i from 1 to p - 1 do
+        
         // Step 1: find leaf v with smallest ID (degree == 1).
+        // v := min {k ∈ V | d(k) = 1}
         const int leaf = findSmallestLeaf(aliveVertices, currentDegree);
+        ////////// v := min {k ∈ V | d(k) = 1} { выбираем вершину v — висячую вершину с наименьшим номером }
+        
         if (leaf == -1) {
             // Shouldn't happen in a valid tree, but bail out gracefully.
             break;
@@ -90,6 +99,7 @@ PruferCode PruferEncoder::encode(const AdjacencyGraph& tree) {
         // Step 3: write code[i] = neighbor, weights[i] = w(leaf, neighbor).
         result.code.push_back(neighbor);
         result.weights.push_back(edgeWeight.at(edgeKey(leaf, neighbor)));
+        ////////// A[i] := Γ(v) { записываем в код номер единственной вершины, смежной с v }
 
         // Step 4: physically remove leaf from the tree.
         // - drop the edge from both adjacency lists
@@ -102,9 +112,12 @@ PruferCode PruferEncoder::encode(const AdjacencyGraph& tree) {
 
         aliveVertices.erase(
             std::find(aliveVertices.begin(), aliveVertices.end(), leaf));
+        ////////// V := V - v { удаляем вершину v из дерева }
     }
+    ////////// end for
 
     return result;
+    ////////// Выход: Массив A : array [1..p-1] of 1..p — код Прюфера дерева T
 }
 
 std::unique_ptr<AdjacencyGraph> PruferEncoder::decode(
@@ -132,6 +145,10 @@ std::unique_ptr<AdjacencyGraph> PruferEncoder::decode(
     // B = unused vertex IDs (sorted ascending so "smallest unused" is just front()).
     std::vector<int> unusedSorted = vertexIds;
     std::sort(unusedSorted.begin(), unusedSorted.end());
+    ////////// B := 1..p { множество неиспользованных номеров вершин }
+
+    std::unordered_set<int> E;  // edges will be added to tree
+    ////////// E := ∅ { в начале множество рёбер пусто }
 
     // Decoder per slide 31:
     //   for i from 1 to p - 1:
@@ -140,12 +157,17 @@ std::unique_ptr<AdjacencyGraph> PruferEncoder::decode(
     //     B := B - v
     //
     // "Smallest unused ID that does NOT appear in the remaining suffix of the code".
+    
+    // for i from 1 to p - 1 do
     for (int i = 0; i < steps; ++i) {
+        ////////// for i from 1 to p - 1 do
+        
         // Build the set of values present in code[i..end]: that's the forbidden set.
         std::unordered_set<int> remainingInCode;
         for (int j = i; j < codeLength; ++j) {
             remainingInCode.insert(pruferCode.code[j]);
         }
+        ////////// { множество вершин, встречающихся в остатке кода Прюфера A[j] для j >= i }
 
         // Walk unusedSorted from the front to find the smallest k not in remainingInCode.
         int chosenIdx = -1;
@@ -162,14 +184,21 @@ std::unique_ptr<AdjacencyGraph> PruferEncoder::decode(
         }
 
         const int v = unusedSorted[chosenIdx];
+        ////////// v := min {k ∈ B | ∀j ≥ i (k ≠ A[j])} { выбираем вершину v — неиспользованную вершину с наименьшим номером, который не встречается в остатке кода Прюфера }
+        
         const int neighbor = pruferCode.code[i];
         const double weight = pruferCode.weights[i];
 
         tree->addEdge(v, neighbor, weight);
+        E.insert(v);
+        E.insert(neighbor);
+        ////////// E := E + (v, A[i]) { добавляем ребро (v, A[i]) }
 
         // Remove v from unused.
         unusedSorted.erase(unusedSorted.begin() + chosenIdx);
+        ////////// B := B - v { удаляем вершину v из списка неиспользованных }
     }
+    ////////// end for
 
     // After p - 1 steps the encoder leaves exactly one vertex in B and one
     // unrecorded edge (the last leaf attached to the last survivor). Per slide 30
@@ -177,4 +206,5 @@ std::unique_ptr<AdjacencyGraph> PruferEncoder::decode(
     // covered all p - 1 edges -- no extra "join the last two unused" step needed.
 
     return tree;
+    ////////// Выход: Дерево T(V, E), заданное множеством рёбер E
 }

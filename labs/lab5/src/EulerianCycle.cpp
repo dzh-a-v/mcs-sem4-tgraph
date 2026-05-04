@@ -102,10 +102,19 @@ std::vector<int> hierholzer(const AdjacencyGraph& g, int start) {
 
     std::stack<int> path;       // current incomplete walk
     std::vector<int> cycle;     // result, built in reverse order
+    
+    ////////// S := ∅ { стек для хранения вершин }
+    ////////// select v ∈ V { произвольная вершина }
     path.push(start);
+    ////////// v → S { положить v в стек S }
 
+    // while S ≠ ∅ do
     while (!path.empty()) {
+        ////////// while S ≠ ∅ do
+        
         int u = path.top();
+        ////////// v := top S { v — верхний элемент стека }
+        
         auto& list = adj[u];
         size_t& i = cursor[u];
 
@@ -122,19 +131,28 @@ std::vector<int> hierholzer(const AdjacencyGraph& g, int start) {
             // splice case -- subcycles get inserted in the right place.
             cycle.push_back(u);
             path.pop();
+            ////////// if Γ[v] = ∅ then
+            //////////     v ← S; yield v { очередная вершина эйлерова цикла }
         } else {
             // Take this edge: walk to the neighbor, mark the edge consumed.
             const AdjSlot slot = list[i];
             usedEdges.insert(slot.edgeId);
             ++i;
             path.push(slot.neighbor);
+            ////////// else
+            //////////     select u ∈ Γ[v] { взять первую вершину из списка смежности }
+            //////////     u → S { положить u в стек }
+            //////////     Γ[v] := Γ[v] - u; Γ[u] := Γ[u] - v { удалить ребро (v,u) }
+            ////////// end if
         }
     }
+    ////////// end while
 
     // We were popping, so the cycle is currently start <- ... <- start.
     // Reverse to get the natural start -> ... -> start order.
     std::reverse(cycle.begin(), cycle.end());
     return cycle;
+    ////////// Выход: последовательность вершин эйлерова цикла
 }
 
 // Set of unordered pairs (u,v) representing the edges already present in the

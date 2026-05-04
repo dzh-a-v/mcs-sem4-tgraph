@@ -9,10 +9,10 @@
 /// largest possible matching (that would be "maximum"); see the slide on
 /// Hall's theorem for the bipartite case.
 struct MatchingResult {
-    std::vector<WeightedEdge> matchingEdges;  // independent edges chosen by greedy pass
-    std::vector<int> unmatchedVertices;       // vertices not covered by the matching
-    int matchingSize;                         // == matchingEdges.size()
-    bool isPerfect;                           // true iff every vertex is matched
+    std::vector<WeightedEdge> matchingEdges;  // выбранные независимые рёбра
+    std::vector<int> unmatchedVertices;       // не покрытые
+    int matchingSize;                         // = matchingEdges.size()
+    bool isPerfect;                           // все ли покрыты
 };
 
 class GreedyMaximalMatching {
