@@ -25,7 +25,7 @@ DijkstraResult DijkstraAlgorithm::findShortestPaths(int startVertex, std::option
     // Build hash map for vertex ID to index (1-based to match algorithm)
     std::unordered_map<int, int> idToIndex;
     for (int i = 0; i < p; ++i) {
-        result.iterations++;
+        // result.iterations++;
         idToIndex[vertexIds[i]] = i;
     }
 
