@@ -31,9 +31,9 @@
 // Helper Functions
 // ============================================================================
 
-void showMenu(bool hideLegacySections) {
+void showMenu(bool hideLab1) {
     std::cout << "\n========== MAIN MENU ==========\n";
-    if (!hideLegacySections) {
+    if (!hideLab1) {
         std::cout << "\n  --- Lab 1 ---\n";
         std::cout << "  1. Generate random graph\n";
         std::cout << "  2. Calculate eccentricities & center\n";
@@ -67,7 +67,12 @@ void showMenu(bool hideLegacySections) {
     std::cout << "  25. Show fundamental cut-set system (uses MST)\n";
     std::cout << "  26. Combine cuts via symmetric difference\n";
     std::cout << "\n  --- Custom ---\n";
-    std::cout << "  100. Toggle hiding Lab 1, 2, 3, 4 in menu\n";
+    std::cout << "  1001. Toggle hiding Lab 1 in menu\n";
+    std::cout << "  1002. Toggle hiding Lab 2 in menu\n";
+    std::cout << "  1003. Toggle hiding Lab 3 in menu\n";
+    std::cout << "  1004. Toggle hiding Lab 4 in menu\n";
+    std::cout << "  1005. Toggle hiding Lab 5 in menu\n";
+    std::cout << "  1006. Toggle hiding Custom in menu\n";
     std::cout << "  101. Export current graph to Mermaid\n";
     std::cout << "  102. Export current flow network to Mermaid\n";
     std::cout << "  103. Export current spanning tree to Mermaid\n";
@@ -296,10 +301,15 @@ int main() {
     int lastFlowSource = -1;
     int lastFlowSink = -1;
     bool hasMaxFlowResult = false;
-    bool hideLegacySections = false;
+    bool hideLab1 = false;
+    bool hideLab2 = false;
+    bool hideLab3 = false;
+    bool hideLab4 = false;
+    bool hideLab5 = false;
+    bool hideCustom = false;
     
     do {
-        showMenu(hideLegacySections);
+        showMenu(hideLab1);
         userChoice = readInteger("");
         
         switch (userChoice) {
@@ -1298,12 +1308,57 @@ int main() {
             }
 
             // =========================================================
-            case 100:  // Toggle hiding legacy sections
+            case 1001:  // Toggle hiding legacy sections
             {
-                hideLegacySections = !hideLegacySections;
-                std::cout << (hideLegacySections
-                    ? "[OK] Lab 1, 2, 3 and 4 are now hidden in the menu.\n"
-                    : "[OK] Lab 1, 2, 3 and 4 are now shown in the menu.\n");
+                hideLab1 = !hideLab1;
+                std::cout << (hideLab1
+                    ? "[OK] Lab 1 is now hidden in the menu.\n"
+                    : "[OK] Lab 1 is now shown in the menu.\n");
+                break;
+            }
+
+            case 1002:  // Toggle hiding legacy sections
+            {
+                hideLab2 = !hideLab2;
+                std::cout << (hideLab2
+                    ? "[OK] Lab 2 is now hidden in the menu.\n"
+                    : "[OK] Lab 2 is now shown in the menu.\n");
+                break;
+            }
+
+            case 1003:  // Toggle hiding legacy sections
+            {
+                hideLab3 = !hideLab3;
+                std::cout << (hideLab3
+                    ? "[OK] Lab 3 is now hidden in the menu.\n"
+                    : "[OK] Lab 3 is now shown in the menu.\n");
+                break;
+            }
+
+            case 1004:  // Toggle hiding legacy sections
+            {
+                hideLab4 = !hideLab4;
+                std::cout << (hideLab4
+                    ? "[OK] Lab 4 is now hidden in the menu.\n"
+                    : "[OK] Lab 4 is now shown in the menu.\n");
+                break;
+            }
+
+            case 1005:  // Toggle hiding legacy sections
+            {
+                hideLab5 = !hideLab5;
+                std::cout << (hideLab5
+                    ? "[OK] Lab 5 is now hidden in the menu.\n"
+                    : "[OK] Lab 5 is now shown in the menu.\n");
+                break;
+            }
+
+            case 1006:  // Toggle hiding legacy sections
+            {
+                hideCustom = !hideCustom;
+                std::cout << (hideCustom
+                    ? "[OK] Custom menu is now hidden in the menu.\n"
+                    : "[OK] Custom menu is now shown in the menu.\n");
                 break;
             }
 
