@@ -47,27 +47,27 @@ void showMenu(bool hideLegacySections) {
         std::cout << "  9. BFS traversal\n";
         std::cout << "  10. Dijkstra's shortest path\n";
         std::cout << "  11. Compare BFS vs Dijkstra (speed)\n";
+        std::cout << "\n  --- Lab 3 ---\n";
+        std::cout << "  12. Build flow network from current directed graph\n";
+        std::cout << "  13. Show capacity matrix\n";
+        std::cout << "  14. Show cost matrix\n";
+        std::cout << "  15. Find maximum flow\n";
+        std::cout << "  16. Find minimum-cost flow for [2/3 * max]\n";
+        std::cout << "  17. Show flow network details\n";
+        std::cout << "\n  --- Lab 4 ---\n";
+        std::cout << "  18. Count spanning trees (Kirchhoff's theorem)\n";
+        std::cout << "  19. Build minimum spanning tree (Kruskal)\n";
+        std::cout << "  20. Show spanning tree details\n";
+        std::cout << "  21. Encode spanning tree to Prufer code\n";
+        std::cout << "  22. Decode last Prufer code back to a tree\n";
+        std::cout << "  23. Maximal matching (independent edge set)\n";
     }
-    std::cout << "\n  --- Lab 3 ---\n";
-    std::cout << "  12. Build flow network from current directed graph\n";
-    std::cout << "  13. Show capacity matrix\n";
-    std::cout << "  14. Show cost matrix\n";
-    std::cout << "  15. Find maximum flow\n";
-    std::cout << "  16. Find minimum-cost flow for [2/3 * max]\n";
-    std::cout << "  17. Show flow network details\n";
-    std::cout << "\n  --- Lab 4 ---\n";
-    std::cout << "  18. Count spanning trees (Kirchhoff's theorem)\n";
-    std::cout << "  19. Build minimum spanning tree (Kruskal)\n";
-    std::cout << "  20. Show spanning tree details\n";
-    std::cout << "  21. Encode spanning tree to Prufer code\n";
-    std::cout << "  22. Decode last Prufer code back to a tree\n";
-    std::cout << "  23. Maximal matching (independent edge set)\n";
     std::cout << "\n  --- Lab 5 ---\n";
     std::cout << "  24. Build Eulerian cycle (modify graph if needed)\n";
     std::cout << "  25. Show fundamental cut-set system (uses MST)\n";
     std::cout << "  26. Combine cuts via symmetric difference\n";
     std::cout << "\n  --- Custom ---\n";
-    std::cout << "  100. Toggle hiding Lab 1 and Lab 2 in menu\n";
+    std::cout << "  100. Toggle hiding Lab 1, 2, 3, 4 in menu\n";
     std::cout << "  101. Export current graph to Mermaid\n";
     std::cout << "  102. Export current flow network to Mermaid\n";
     std::cout << "  103. Export current spanning tree to Mermaid\n";
@@ -1113,9 +1113,39 @@ int main() {
                 }
 
                 EulerianCycleBuilder builder(*currentGraph);
-                EulerianCycleResult er = builder.compute();
+                // First attempt: try to eulerize without creating a multigraph.
+                EulerianCycleResult er = builder.compute(EulerizationMode::NonMultigraphOnly);
 
                 std::cout << "\n=== EULERIAN CYCLE ===\n";
+
+                // Handle the "needs multigraph" case: ask the user whether to
+                // proceed with parallel edges or to abort.
+                if (!er.success && er.requiresMultigraph) {
+                    std::cout << "[!] Cannot make this graph Eulerian without\n"
+                                 "    duplicating an existing edge -- the only\n"
+                                 "    possible eulerization turns it into a\n"
+                                 "    multigraph.\n";
+                    std::cout << "Modify the graph into a multigraph anyway to\n"
+                                 "obtain an Eulerian cycle? [y/n]: ";
+                    std::string answer;
+                    //std::getline(std::cin, answer);
+                    // Accept "y" / "Y" / "yes" / "Yes" / etc.
+                    std::cin >> answer;
+                    bool accept = answer[0] == 'y';
+                    if (!accept) {
+                        std::cout << "[i] Aborted -- no Eulerian cycle was built.\n";
+                        break;
+                    }
+
+                    // Re-run with multigraph allowed.
+                    er = builder.compute(EulerizationMode::AllowMultigraph);
+                    if (!er.success) {
+                        std::cout << "[!] Unexpected failure while building\n"
+                                     "    the Eulerian cycle.\n";
+                        break;
+                    }
+                    std::cout << "[i] Proceeding with multigraph eulerization.\n";
+                }
 
                 if (!er.success) {
                     std::cout << "[!] Cannot build Eulerian cycle (graph has no edges).\n";
@@ -1272,8 +1302,8 @@ int main() {
             {
                 hideLegacySections = !hideLegacySections;
                 std::cout << (hideLegacySections
-                    ? "[OK] Lab 1 and Lab 2 are now hidden in the menu.\n"
-                    : "[OK] Lab 1 and Lab 2 are now shown in the menu.\n");
+                    ? "[OK] Lab 1, 2, 3 and 4 are now hidden in the menu.\n"
+                    : "[OK] Lab 1, 2, 3 and 4 are now shown in the menu.\n");
                 break;
             }
 

@@ -1,5 +1,7 @@
 #include "include/EulerianCycle.h"
 #include <algorithm>
+#include <functional>
+#include <set>
 #include <stack>
 #include <unordered_map>
 #include <unordered_set>
@@ -135,12 +137,68 @@ std::vector<int> hierholzer(const AdjacencyGraph& g, int start) {
     return cycle;
 }
 
+// Set of unordered pairs (u,v) representing the edges already present in the
+// graph.  Used to detect when adding (u,v) would duplicate an existing edge.
+std::set<std::pair<int,int>> existingEdgePairs(const AdjacencyGraph& g) {
+    std::set<std::pair<int,int>> pairs;
+    for (const WeightedEdge& e : g.edges()) {
+        int a = e.from, b = e.to;
+        if (a > b) std::swap(a, b);
+        pairs.insert({a, b});
+    }
+    return pairs;
+}
+
+// Try to find a perfect matching of `oddVertices` such that no matched pair
+// (u,v) already exists in `forbidden`.  Returns true on success and fills
+// `pairs` with the matching.  Uses backtracking; the number of odd vertices
+// in our use cases is small enough for this to be fine.
+bool findNonMultigraphMatching(const std::vector<int>& oddVertices,
+                               const std::set<std::pair<int,int>>& forbidden,
+                               std::vector<std::pair<int,int>>& pairs) {
+    const size_t n = oddVertices.size();
+    std::vector<bool> used(n, false);
+
+    auto isForbidden = [&](int u, int v) {
+        int a = u, b = v;
+        if (a > b) std::swap(a, b);
+        return forbidden.count({a, b}) > 0;
+    };
+
+    // Recursive helper: pick the lowest-index unused vertex, try every
+    // unused partner that does not collide with an existing edge.
+    std::function<bool()> recurse = [&]() -> bool {
+        // Find first unused index.
+        size_t i = 0;
+        while (i < n && used[i]) ++i;
+        if (i == n) return true;  // all matched
+
+        used[i] = true;
+        for (size_t j = i + 1; j < n; ++j) {
+            if (used[j]) continue;
+            if (isForbidden(oddVertices[i], oddVertices[j])) continue;
+
+            used[j] = true;
+            pairs.push_back({oddVertices[i], oddVertices[j]});
+            if (recurse()) return true;
+            pairs.pop_back();
+            used[j] = false;
+        }
+        used[i] = false;
+        return false;
+    };
+
+    pairs.clear();
+    return recurse();
+}
+
 }  // namespace
 
-EulerianCycleResult EulerianCycleBuilder::compute() const {
+EulerianCycleResult EulerianCycleBuilder::compute(EulerizationMode mode) const {
     EulerianCycleResult result;
     result.success = false;
     result.wasAlreadyEulerian = false;
+    result.requiresMultigraph = false;
 
     // Always work on a copy so we can add edges freely.
     result.modifiedGraph = cloneGraph(m_graph);
@@ -163,6 +221,10 @@ EulerianCycleResult EulerianCycleBuilder::compute() const {
     // If we have several components that each contain edges, we must add
     // bridge edges between them.  Connecting k components needs k-1 bridges.
     // We always bridge the first vertex of each component (deterministic).
+    //
+    // Bridging two different components can never create a parallel edge
+    // (the endpoints had no path between them, let alone a direct edge), so
+    // step 1 is safe in either mode.
     while (true) {
         auto components = connectedComponentsWithEdges(G);
         if (components.size() <= 1) break;
@@ -188,11 +250,43 @@ EulerianCycleResult EulerianCycleBuilder::compute() const {
     // Sort for reproducibility -- same input should always pair the same way.
     std::sort(oddVertices.begin(), oddVertices.end());
 
-    for (size_t i = 0; i + 1 < oddVertices.size(); i += 2) {
-        const int u = oddVertices[i];
-        const int v = oddVertices[i + 1];
-        G.addEdge(u, v, 0.0);
-        result.additions.push_back({u, v, "fix odd parity"});
+    // Try to pair odd vertices.  In NonMultigraphOnly mode we look for a
+    // perfect matching that avoids any pair already connected by an edge.
+    // If no such matching exists, we cannot fix the graph without making it
+    // a multigraph -- bail out and let the caller decide whether to retry.
+    if (!oddVertices.empty()) {
+        std::vector<std::pair<int,int>> pairs;
+        bool foundClean = false;
+
+        if (mode == EulerizationMode::NonMultigraphOnly) {
+            const auto forbidden = existingEdgePairs(G);
+            foundClean = findNonMultigraphMatching(oddVertices, forbidden, pairs);
+
+            if (!foundClean) {
+                // Cannot eulerize without creating parallel edges.  Surface
+                // this to the caller; do NOT mutate the graph any further
+                // and do NOT compute a cycle.
+                result.requiresMultigraph = true;
+                result.success = false;
+                // Roll back the modifiedGraph to the post-step-1 state we
+                // already have, but leave additions intact so the caller can
+                // see the bridge edges that would still be needed.
+                return result;
+            }
+        } else {
+            // AllowMultigraph: just pair adjacent odd vertices in the sorted
+            // list.  This matches the original behavior and is guaranteed to
+            // succeed (handshaking lemma).
+            for (size_t i = 0; i + 1 < oddVertices.size(); i += 2) {
+                pairs.push_back({oddVertices[i], oddVertices[i + 1]});
+            }
+        }
+
+        // Apply the chosen pairing.
+        for (const auto& [u, v] : pairs) {
+            G.addEdge(u, v, 0.0);
+            result.additions.push_back({u, v, "fix odd parity"});
+        }
     }
 
     result.wasAlreadyEulerian = result.additions.empty();
