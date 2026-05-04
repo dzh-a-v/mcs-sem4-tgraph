@@ -31,7 +31,7 @@
 // Helper Functions
 // ============================================================================
 
-void showMenu(bool hideLab1) {
+void showMenu(bool hideLab1, bool hideLab2, bool hideLab3, bool hideLab4, bool hideLab5, bool hideCustom) {
     std::cout << "\n========== MAIN MENU ==========\n";
     if (!hideLab1) {
         std::cout << "\n  --- Lab 1 ---\n";
@@ -319,7 +319,7 @@ int main() {
     bool hideCustom = false;
     
     do {
-        showMenu(hideLab1);
+        showMenu(hideLab1, hideLab2, hideLab3, hideLab4, hideLab5, hideCustom);
         userChoice = readInteger("");
         
         switch (userChoice) {
