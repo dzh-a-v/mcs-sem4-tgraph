@@ -25,7 +25,7 @@
 #include "include/PruferCode.h"
 #include "include/MaxMatching.h"
 #include "include/EulerianCycle.h"
-#include "include/FundamentalCycles.h"
+#include "include/FundamentalCuts.h"
 
 // ============================================================================
 // Helper Functions
@@ -71,8 +71,8 @@ void showMenu(bool hideLab1, bool hideLab2, bool hideLab3, bool hideLab4, bool h
     if (!hideLab5) {
         std::cout << "\n  --- Lab 5 ---\n";
         std::cout << "  24. Build Eulerian cycle (modify graph if needed)\n";
-        std::cout << "  25. Show fundamental cycle system (uses MST)\n";
-        std::cout << "  26. Combine cycles via symmetric difference\n";
+        std::cout << "  25. Show fundamental cut-set system (uses MST)\n";
+        std::cout << "  26. Combine cuts via symmetric difference\n";
     }
     if (!hideCustom) {
         std::cout << "\n  --- Custom ---\n";
@@ -305,7 +305,7 @@ int main() {
     std::unique_ptr<AdjacencyGraph> currentSpanningTree;
     PruferCode lastPruferCode;
     bool hasPruferCode = false;
-    std::vector<FundamentalCycle> lastFundamentalCycles;  // cached for option 26
+    std::vector<FundamentalCut> lastFundamentalCuts;  // cached for option 26
     int userChoice;
     int lastMaxFlow = 0;
     int lastFlowSource = -1;
@@ -347,7 +347,7 @@ int main() {
                 currentSpanningTree.reset();
                 hasPruferCode = false;
                 lastPruferCode = PruferCode{};
-                lastFundamentalCycles.clear();
+                lastFundamentalCuts.clear();
                 lastMaxFlow = 0;
                 lastFlowSource = -1;
                 lastFlowSink = -1;
@@ -937,7 +937,7 @@ int main() {
                 currentSpanningTree = std::move(result.spanningTree);
                 hasPruferCode = false;  // tree has changed, invalidate old code
                 lastPruferCode = PruferCode{};
-                lastFundamentalCycles.clear();  // cycles depend on the tree
+                lastFundamentalCuts.clear();  // cuts depend on the tree
                 std::cout << "\n[OK] Spanning tree saved as the current MST.\n";
                 break;
             }
@@ -1204,7 +1204,7 @@ int main() {
             }
 
             // =========================================================
-            case 25:  // Fundamental cycle system
+            case 25:  // Fundamental cut-set system
             {
                 if (!currentGraph) {
                     std::cout << "[!] Generate a graph first\n";
@@ -1219,39 +1219,34 @@ int main() {
                     break;
                 }
 
-                FundamentalCycleSystem system(*currentGraph, *currentSpanningTree);
-                lastFundamentalCycles = system.compute();
+                FundamentalCutSystem system(*currentGraph, *currentSpanningTree);
+                lastFundamentalCuts = system.compute();
 
-                std::cout << "\n=== FUNDAMENTAL CYCLE SYSTEM ===\n";
-                std::cout << "One fundamental cycle per chord (non-tree edge).\n";
-                std::cout << "Total cycles: " << lastFundamentalCycles.size()
-                          << " (= |E| - |V| + 1 for a connected graph).\n";
+                std::cout << "\n=== FUNDAMENTAL CUT-SET SYSTEM ===\n";
+                std::cout << "One fundamental cut per tree edge "
+                          << "(" << lastFundamentalCuts.size() << " cuts).\n";
+                std::cout << "Each cut Q(e) = all graph edges with endpoints on\n";
+                std::cout << "opposite sides after removing tree edge e.\n";
 
-                if (lastFundamentalCycles.empty()) {
-                    std::cout << "[!] No chords -- the graph is itself a tree, "
-                                 "no cycles exist.\n";
-                    break;
-                }
+                for (size_t i = 0; i < lastFundamentalCuts.size(); ++i) {
+                    const FundamentalCut& cut = lastFundamentalCuts[i];
+                    std::cout << "\n  Q" << (i + 1)
+                              << " (tree edge v" << cut.treeEdgeFrom
+                              << " --- v" << cut.treeEdgeTo << "):\n";
 
-                for (size_t i = 0; i < lastFundamentalCycles.size(); ++i) {
-                    const FundamentalCycle& cycle = lastFundamentalCycles[i];
-                    std::cout << "\n  C" << (i + 1)
-                              << " (chord v" << cycle.chordFrom
-                              << " --- v" << cycle.chordTo << "):\n";
+                    std::cout << "    Side A: { ";
+                    for (int v : cut.sideA) std::cout << "v" << v << " ";
+                    std::cout << "}\n";
 
-                    std::cout << "    Vertex sequence: ";
-                    for (size_t j = 0; j < cycle.vertexSequence.size(); ++j) {
-                        std::cout << "v" << cycle.vertexSequence[j];
-                        if (j + 1 < cycle.vertexSequence.size())
-                            std::cout << " -> ";
-                    }
-                    std::cout << "\n";
+                    std::cout << "    Side B: { ";
+                    for (int v : cut.sideB) std::cout << "v" << v << " ";
+                    std::cout << "}\n";
 
-                    std::cout << "    Edges (" << cycle.edges.size() << "): ";
-                    for (size_t j = 0; j < cycle.edges.size(); ++j) {
-                        std::cout << "(v" << cycle.edges[j].first
-                                  << ",v" << cycle.edges[j].second << ")";
-                        if (j + 1 < cycle.edges.size()) std::cout << ", ";
+                    std::cout << "    Edges (" << cut.edges.size() << "): ";
+                    for (size_t j = 0; j < cut.edges.size(); ++j) {
+                        std::cout << "(v" << cut.edges[j].first
+                                  << ",v" << cut.edges[j].second << ")";
+                        if (j + 1 < cut.edges.size()) std::cout << ", ";
                     }
                     std::cout << "\n";
                 }
@@ -1259,17 +1254,16 @@ int main() {
             }
 
             // =========================================================
-            case 26:  // Combine cycles via symmetric difference
+            case 26:  // Combine cuts via symmetric difference
             {
-                if (lastFundamentalCycles.empty()) {
-                    std::cout << "[!] Build the fundamental cycle system first (option 25)\n";
+                if (lastFundamentalCuts.empty()) {
+                    std::cout << "[!] Build the fundamental cut-set system first (option 25)\n";
                     break;
                 }
 
-                std::cout << "\n--- Symmetric Difference of Cycles ---\n";
-                std::cout << "Available fundamental cycles: 1.."
-                          << lastFundamentalCycles.size() << "\n";
-                std::cout << "Enter cycle numbers separated by spaces, "
+                std::cout << "\n--- Symmetric Difference of Cuts ---\n";
+                std::cout << "Available fundamental cuts: 1.." << lastFundamentalCuts.size() << "\n";
+                std::cout << "Enter cut numbers separated by spaces, "
                              "end with 0 (need at least 2):\n";
                 std::cout << "> ";
 
@@ -1283,7 +1277,7 @@ int main() {
                         continue;
                     }
                     if (x == 0) break;
-                    if (x < 1 || x > static_cast<int>(lastFundamentalCycles.size())) {
+                    if (x < 1 || x > static_cast<int>(lastFundamentalCuts.size())) {
                         std::cout << "Out of range, ignored. Continue: ";
                         continue;
                     }
@@ -1291,28 +1285,27 @@ int main() {
                 }
 
                 if (picks.size() < 2) {
-                    std::cout << "[!] Need at least 2 cycles to take a symmetric difference.\n";
+                    std::cout << "[!] Need at least 2 cuts to take a symmetric difference.\n";
                     break;
                 }
 
                 // XOR the picks together left-to-right.
                 // Since (A xor B) xor C = A xor (B xor C), order does not change
                 // the final set, but we accumulate left to right anyway.
-                std::vector<std::pair<int,int>> acc =
-                    lastFundamentalCycles[picks[0] - 1].edges;
+                std::vector<std::pair<int,int>> acc = lastFundamentalCuts[picks[0] - 1].edges;
                 for (size_t i = 1; i < picks.size(); ++i) {
-                    acc = FundamentalCycleSystem::symmetricDifference(
-                        acc, lastFundamentalCycles[picks[i] - 1].edges);
+                    acc = FundamentalCutSystem::symmetricDifference(
+                        acc, lastFundamentalCuts[picks[i] - 1].edges);
                 }
 
-                std::cout << "\nResult of C" << picks[0];
+                std::cout << "\nResult of Q" << picks[0];
                 for (size_t i = 1; i < picks.size(); ++i) {
-                    std::cout << " XOR C" << picks[i];
+                    std::cout << " XOR Q" << picks[i];
                 }
                 std::cout << ":\n";
                 std::cout << "  Edges (" << acc.size() << "): ";
                 if (acc.empty()) {
-                    std::cout << "(empty -- the cycles cancelled out)";
+                    std::cout << "(empty cut)";
                 } else {
                     for (size_t j = 0; j < acc.size(); ++j) {
                         std::cout << "(v" << acc[j].first
@@ -1321,9 +1314,6 @@ int main() {
                     }
                 }
                 std::cout << "\n";
-                std::cout << "(Note: a single cycle has each vertex appearing in exactly\n";
-                std::cout << " 2 edges; if some vertex appears in more, the result is a\n";
-                std::cout << " disjoint union of cycles -- still a valid element of the cycle space.)\n";
                 break;
             }
 

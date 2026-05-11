@@ -27,4 +27,5 @@ add_executable(lab5
     src/MaxMatching.cpp
     src/EulerianCycle.cpp
     src/FundamentalCuts.cpp
+    src/FundamentalCycles.cpp
 )
