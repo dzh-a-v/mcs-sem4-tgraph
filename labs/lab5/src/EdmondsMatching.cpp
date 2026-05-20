@@ -241,7 +241,7 @@ private:
     }
 };
 
-}  // namespace
+}
 
 // =====================================================================
 // Public driver. Runs the algorithm, then converts the dense match[]
