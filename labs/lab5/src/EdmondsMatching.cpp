@@ -4,30 +4,158 @@
 #include <unordered_map>
 #include <vector>
 
+/*
+    Термины, которые используются ниже:
+
+    Matching / паросочетание M:
+        набор ребер, где никакие два ребра не имеют общей вершины.
+
+    Matched / covered vertex:
+        вершина, которая уже является концом какого-то ребра из M.
+
+    Free / unmatched vertex:
+        вершина, которая пока не покрыта ни одним ребром из M.
+
+    Matched edge:
+        ребро, которое уже входит в текущее паросочетание M.
+
+    Unmatched edge:
+        ребро графа, которое сейчас не входит в M.
+
+    Alternating path / чередующийся путь:
+        путь, где ребра идут по очереди:
+        не из M, из M, не из M, из M, ...
+
+    Augmenting path / аугментирующий путь:
+        чередующийся путь, который начинается и заканчивается в свободных
+        вершинах. Если его "перевернуть", matching станет больше на 1 ребро.
+
+    Root / корневая вершина:
+        свободная вершина, от которой мы начинаем BFS-поиск аугментирующего
+        пути. В коде это параметр root в bfsAugment(root).
+
+    Alternating tree / чередующееся дерево:
+        BFS-дерево, которое строится от root. В нем путь от root до любой
+        вершины тоже чередуется по ребрам: не из M, из M, не из M, ...
+
+    Even-level vertex / вершина четного уровня:
+        вершина, до которой от root идет путь четной длины. Именно такие
+        вершины лежат в очереди BFS в этом коде.
+
+    Odd-level vertex / вершина нечетного уровня:
+        вершина, до которой от root идет путь нечетной длины. Если она покрыта
+        matching, мы сразу "перепрыгиваем" через ее matched edge к парной
+        вершине четного уровня.
+
+    parent[v]:
+        откуда мы пришли в вершину v в чередующемся дереве. По parent[] потом
+        восстанавливается найденный аугментирующий путь.
+
+    Blossom:
+        нечетный цикл, найденный внутри чередующегося дерева. Его можно
+        временно считать одной вершиной, чтобы BFS не застревал на цикле.
+
+    Base / база blossom:
+        вершина цикла, ближайшая к root. После сжатия blossom все вершины
+        внутри него имеют одну общую базу в массиве base[].
+
+    LCA:
+        lowest common ancestor, то есть ближайший общий предок двух вершин
+        в чередующемся дереве. В этом алгоритме LCA становится базой blossom.
+
+    Contraction / shrink:
+        временное сжатие blossom в одну "супервершину". В коде это делается
+        не созданием нового графа, а перенаправлением base[].
+
+    Алгоритм Эдмондса (blossom), общая идея:
+
+    Нужно найти maximum matching, то есть самое большое по числу ребер
+    паросочетание. Паросочетание M - это набор ребер, где никакие два ребра
+    не имеют общей вершины.
+
+    Алгоритм держит текущее M и ищет аугментирующий путь. Это путь, который
+    начинается в свободной вершине, заканчивается в другой свободной вершине,
+    а ребра в нем чередуются так:
+
+        не из M, из M, не из M, из M, ..., не из M
+
+    Если такой путь найден, ребра на нем "переворачиваются":
+        те, что были в M, удаляются,
+        те, которых не было в M, добавляются.
+    После этого размер паросочетания увеличивается на 1.
+
+    В двудольном графе для этого хватает обычного BFS по чередующимся путям.
+    В общем графе мешают нечетные циклы. Такой нечетный цикл называется
+    blossom. Эдмондс временно сжимает весь blossom в одну вершину, продолжает
+    поиск, а потом по parent/base восстанавливает настоящий путь.
+
+    Как это сделано именно тут:
+
+    1. EdmondsWorker сначала переводит id вершин графа в индексы 0..n-1.
+       Все массивы ниже работают с этими индексами. В самом конце индексы
+       переводятся обратно в настоящие id вершин.
+
+    2. m_match заполняется -1. Это значит, что начальное паросочетание пустое.
+       Никакого жадного начального шага здесь нет.
+
+    3. run() идет по всем вершинам. Если вершина v все еще свободна, вызывается
+       findAugmentingPath(v). Это не значит, что v сразу добавляется в matching.
+       Это значит только: пробуем построить от нее чередующееся BFS-дерево.
+
+    4. В bfsAugment(root) начальный "путь" состоит только из root:
+           queue = { root }
+           parent[*] = -1
+           base[i] = i
+       Отдельным массивом путь во время поиска не хранится. Вместо этого
+       запоминаются parent-ссылки. Сам путь потом восстанавливается назад
+       от найденной свободной конечной вершины.
+
+    5. В очереди BFS лежат вершины четного уровня чередующегося дерева.
+       Для такой вершины u смотрим каждое ребро графа (u, v):
+
+       - Если v свободна и еще не посещалась, то root ... u - v уже является
+         аугментирующим путем. bfsAugment возвращает v.
+
+       - Если v уже покрыта паросочетанием и ее пара - x, то продолжать путь
+         можно только через ребро паросочетания v - x. Поэтому ставим
+         parent[v] = u и кладем x = m_match[v] в очередь как новую вершину
+         четного уровня.
+
+       - Если v уже лежит в этом же чередующемся дереве так, что получается
+         нечетный цикл, найден blossom. contractBlossom(u, v) находит его базу
+         через findLCA(), отмечает обе стороны цикла и для всех вершин внутри
+         цикла перенаправляет base[] на общую базу.
+
+    6. Когда bfsAugment возвращает свободную конечную вершину, augment(endpoint)
+       идет назад по parent[] и переворачивает ребра на найденном пути:
+
+           endpoint <- parent[endpoint] <- matched partner <- ...
+
+       После этого в matching становится на одно ребро больше.
+
+    7. Если от root аугментирующий путь не найден, matching не меняется.
+       Внешний цикл просто пробует следующую свободную вершину.
+
+    Важно: этот алгоритм максимизирует количество ребер. Веса тут не участвуют
+    в выборе, они нужны только для красивого вывода найденных ребер.
+*/
+
 namespace {
 
-// =====================================================================
-// Internal worker class. Encapsulates all the BFS / blossom-contraction
-// state for one run of the algorithm.
-//
-// Vertex IDs in AdjacencyGraph can be arbitrary integers, so on entry
-// we densify them to [0..n). Every internal array uses these dense
-// indices; we only translate back to original IDs at the very end.
-// =====================================================================
+// Internal worker: the algorithm uses dense vertex indexes.
 class EdmondsWorker {
 public:
     EdmondsWorker(const AdjacencyGraph& graph)
         : m_graph(graph)
         , m_n(graph.size())
     {
-        // Build dense index <-> ID mapping.
+        // Original id <-> dense index.
         m_vertexIds = graph.vertexIds();
         for (int i = 0; i < m_n; ++i) {
             m_idToIndex[m_vertexIds[i]] = i;
         }
 
-        // Build dense adjacency list for fast neighbor iteration.
-        // Self-loops are skipped: they can never be part of a matching.
+        // Dense adjacency list. Self-loops are useless for matching.
         m_adj.assign(m_n, {});
         for (const WeightedEdge& edge : graph.edges()) {
             const int u = m_idToIndex[edge.from];
@@ -38,14 +166,11 @@ public:
         }
     }
 
-    /// Main entry: run Edmonds, return match[] in DENSE indices.
-    /// match[i] == -1 means vertex i is unmatched.
+    /// Run Edmonds. match[i] == -1 means i is unmatched.
     std::vector<int> run() {
         m_match.assign(m_n, -1);
 
-        // Outer loop: for each currently unmatched vertex, try to find
-        // an augmenting path starting there. If found, flip it to grow M.
-        // Each successful flip increases |M| by 1.
+        // Try to grow the matching from every free vertex.
         for (int v = 0; v < m_n; ++v) {
             if (m_match[v] == -1) {
                 findAugmentingPath(v);
@@ -55,72 +180,48 @@ public:
     }
 
 private:
-    // Graph data (in dense indices)
+    // Graph data in dense indexes.
     const AdjacencyGraph& m_graph;
     int m_n;
     std::vector<int> m_vertexIds;          // dense index -> original ID
     std::unordered_map<int, int> m_idToIndex;  // original ID -> dense index
     std::vector<std::vector<int>> m_adj;   // dense adjacency
 
-    // Per-augmenting-path state (rebuilt each findAugmentingPath call)
+    // State for one BFS search.
     std::vector<int> m_match;     // match[v] = partner of v in M, or -1
     std::vector<int> m_parent;    // BFS-tree parent (in the alternating forest)
-    std::vector<int> m_base;      // base[v] = current "shrunk-to" representative
-                                  //           of v's blossom (DSU-like, no path
-                                  //           compression -- kept simple)
+    std::vector<int> m_base;      // current blossom base for each vertex
     std::vector<int> m_q;         // BFS queue (dense indices)
     std::vector<bool> m_inQueue;  // BFS visited flag
     std::vector<bool> m_inBlossom; // marker used when contracting a blossom
 
-    // -----------------------------------------------------------------
-    // Find the LCA of two vertices in the alternating BFS forest.
-    //
-    // When BFS finds an edge (a, b) between two vertices that are
-    // BOTH on even levels of the SAME tree, the cycle they form with
-    // their lowest common ancestor is an ODD cycle -- a blossom.
-    // The LCA is the base of that blossom.
-    //
-    // Implementation: walk up from both a and b alternately, marking
-    // visited bases. The first base we see marked from both sides is the
-    // LCA. We must use base[] (not the raw parent chain) because vertices
-    // already inside a previously-contracted blossom must be treated as
-    // their current base for ancestry purposes.
-    // -----------------------------------------------------------------
+    // Lowest common ancestor in the alternating forest.
     int findLCA(int a, int b) {
         std::vector<bool> visitedByA(m_n, false);
 
-        // Climb up from a, marking every base we pass through.
+        // Mark the path from a to the root.
         int x = a;
         while (true) {
             x = m_base[x];
             visitedByA[x] = true;
-            if (m_match[x] == -1) break;        // reached a tree root
-            x = m_parent[m_match[x]];           // jump two steps up the tree
+            if (m_match[x] == -1) break;
+            x = m_parent[m_match[x]];
         }
 
-        // Now climb up from b until we hit a base that A also visited.
+        // Climb from b until we hit that path.
         int y = b;
         while (true) {
             y = m_base[y];
-            if (visitedByA[y]) return y;        // <-- found the LCA
-            y = m_parent[m_match[y]];           // jump two steps up
+            if (visitedByA[y]) return y;
+            y = m_parent[m_match[y]];
         }
     }
 
-    // -----------------------------------------------------------------
-    // Mark every vertex on the cycle path from `u` up to the LCA `b`
-    // as belonging to the new blossom. Also enqueue any odd-level
-    // vertex that we now reach via an even path through the contracted
-    // blossom (so BFS can continue past them).
-    // -----------------------------------------------------------------
+    // Mark one side of a blossom.
     void markBlossomPath(int u, int b, int child) {
         while (m_base[u] != b) {
-            // Record parent so that later, when we lift the blossom to
-            // reconstruct an augmenting path, we know how it was reached.
             m_parent[u] = child;
             child = m_match[u];
-            // Any odd-level vertex previously dormant is now reachable
-            // via an even-level path through the contracted blossom.
             if (!m_inQueue[child]) {
                 m_q.push_back(child);
                 m_inQueue[child] = true;
@@ -131,17 +232,7 @@ private:
         }
     }
 
-    // -----------------------------------------------------------------
-    // Contract a blossom found via edge (u, v) inside the same BFS tree.
-    //
-    // Step 1: locate the LCA (= the base of the new blossom).
-    // Step 2: walk both branches u -> LCA and v -> LCA, marking all the
-    //         vertices on the cycle as "in blossom".
-    // Step 3: set base[x] = LCA for every x that ended up in the blossom.
-    //         This is the actual "contraction" -- from now on, any query
-    //         base[x] returns the LCA, so BFS treats the whole cycle as
-    //         a single super-vertex.
-    // -----------------------------------------------------------------
+    // Shrink the blossom found through edge (u, v).
     void contractBlossom(int u, int v) {
         const int lca = findLCA(u, v);
 
@@ -149,8 +240,7 @@ private:
         markBlossomPath(u, lca, v);
         markBlossomPath(v, lca, u);
 
-        // Every vertex whose CURRENT base ended up flagged is now in the
-        // new blossom -> redirect its base to the LCA.
+        // Redirect all marked bases to the blossom base.
         for (int x = 0; x < m_n; ++x) {
             if (m_inBlossom[m_base[x]]) {
                 m_base[x] = lca;
@@ -158,19 +248,13 @@ private:
         }
     }
 
-    // -----------------------------------------------------------------
-    // BFS from `root`, building an alternating forest. Returns the
-    // free endpoint of an augmenting path if found, otherwise -1.
-    //
-    // The found path is reconstructed by walking parent[] back from the
-    // endpoint to the root, then flipped (XOR-ed with M) by augment().
-    // -----------------------------------------------------------------
+    // BFS in the alternating forest. Returns free endpoint or -1.
     int bfsAugment(int root) {
         m_parent.assign(m_n, -1);
         m_inQueue.assign(m_n, false);
         m_inBlossom.assign(m_n, false);
 
-        // Initially every vertex is its own base.
+        // Each vertex starts as its own base.
         m_base.resize(m_n);
         for (int i = 0; i < m_n; ++i) m_base[i] = i;
 
@@ -178,61 +262,45 @@ private:
         m_q.push_back(root);
         m_inQueue[root] = true;
 
-        // BFS proper. The queue stores ONLY even-level vertices --
-        // odd-level ones are reached implicitly through their match edge
-        // and immediately bounce back to the even level via match[].
+        // Queue stores even-level vertices.
         for (size_t head = 0; head < m_q.size(); ++head) {
             const int u = m_q[head];
             for (int v : m_adj[u]) {
-                // Skip if (u, v) is the matching edge -- it's not part of
-                // the alternating structure we're exploring.
+                // Skip the edge already used in matching.
                 if (m_base[u] == m_base[v] || m_match[u] == v) continue;
 
-                // Case A: edge to root, or to a vertex whose parent we
-                //         already filled in -> odd cycle inside the tree.
-                //         This is a BLOSSOM, contract it.
+                // Odd cycle in the tree: contract it.
                 if (v == root || (m_match[v] != -1 && m_parent[m_match[v]] != -1)) {
                     contractBlossom(u, v);
                 }
-                // Case B: v hasn't been reached at all yet.
+                // New vertex in the forest.
                 else if (m_parent[v] == -1) {
                     m_parent[v] = u;
                     if (m_match[v] == -1) {
-                        // v is FREE -> we have an augmenting path
-                        // root -> ... -> u -> v.
+                        // Free vertex means augmenting path is found.
                         return v;
                     }
-                    // Otherwise, v is matched. Its match partner becomes a
-                    // new even-level vertex, push to queue and continue BFS.
+                    // Jump through the matched edge.
                     m_q.push_back(m_match[v]);
                     m_inQueue[m_match[v]] = true;
                 }
             }
         }
-        return -1;  // no augmenting path from `root`
+        return -1;
     }
 
-    // -----------------------------------------------------------------
-    // Augment along the path ending at `v` (a free vertex). Walk parents
-    // back to the root, flipping each pair (parent -> match) along the way.
-    // Net effect on M: |M| grows by 1, the path's free endpoints become
-    // matched, and matching edges along the path get "rotated" by one step.
-    // -----------------------------------------------------------------
+    // Flip edges along the found augmenting path.
     void augment(int v) {
         while (v != -1) {
             const int pv = m_parent[v];
             const int next = (pv == -1) ? -1 : m_match[pv];
-            // Make (pv, v) a matching edge.
             m_match[v] = pv;
             m_match[pv] = v;
             v = next;
         }
     }
 
-    // -----------------------------------------------------------------
-    // Combine BFS + augment: search from `root`, and if an augmenting
-    // path was found, immediately flip it.
-    // -----------------------------------------------------------------
+    // One attempt to improve the matching.
     void findAugmentingPath(int root) {
         const int endpoint = bfsAugment(root);
         if (endpoint != -1) {
@@ -243,11 +311,7 @@ private:
 
 }
 
-// =====================================================================
-// Public driver. Runs the algorithm, then converts the dense match[]
-// array into the MatchingResult format that GreedyMaximalMatching also
-// uses, so main.cpp doesn't care which algorithm produced the result.
-// =====================================================================
+// Public wrapper: convert dense indexes back to graph vertex ids.
 EdmondsMatching::EdmondsMatching(const AdjacencyGraph& graph)
     : m_graph(graph)
 {}
@@ -263,11 +327,9 @@ MatchingResult EdmondsMatching::compute() const {
     }
 
     EdmondsWorker worker(m_graph);
-    const std::vector<int> match = worker.run();  // match[] in dense indices
+    const std::vector<int> match = worker.run();
 
-    // Translate dense matches back into (original-ID) WeightedEdge entries.
-    // Each matched pair (i, match[i]) appears twice in match[] -- once from
-    // each endpoint -- so we report it only when i < match[i] to avoid dupes.
+    // Report each pair only once.
     const std::vector<int> vertexIds = m_graph.vertexIds();
     std::unordered_map<int, int> idToIndex;
     for (int i = 0; i < n; ++i) idToIndex[vertexIds[i]] = i;
@@ -279,11 +341,9 @@ MatchingResult EdmondsMatching::compute() const {
         const int idA = vertexIds[i];
         const int idB = vertexIds[j];
 
-        // Look up the original edge weight for nicer output.
-        // The matching itself didn't use weights, but the user sees them.
+        // Weight is only for output.
         auto weightOpt = m_graph.getEdgeWeight(idA, idB);
         if (!weightOpt.has_value()) {
-            // Undirected: try the reverse direction too.
             weightOpt = m_graph.getEdgeWeight(idB, idA);
         }
         const double w = weightOpt.value_or(0.0);
@@ -291,7 +351,7 @@ MatchingResult EdmondsMatching::compute() const {
         result.matchingEdges.push_back({idA, idB, w});
     }
 
-    // Sort matching edges lexicographically for deterministic, reproducible output.
+    // Stable output order.
     std::sort(result.matchingEdges.begin(), result.matchingEdges.end(),
         [](const WeightedEdge& a, const WeightedEdge& b) {
             if (a.from != b.from) return a.from < b.from;
@@ -300,7 +360,7 @@ MatchingResult EdmondsMatching::compute() const {
 
     result.matchingSize = static_cast<int>(result.matchingEdges.size());
 
-    // Collect unmatched original IDs.
+    // Uncovered vertices.
     for (int i = 0; i < n; ++i) {
         if (match[i] == -1) {
             result.unmatchedVertices.push_back(vertexIds[i]);
