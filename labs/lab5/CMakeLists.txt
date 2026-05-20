@@ -28,4 +28,5 @@ add_executable(lab5
     src/EulerianCycle.cpp
     src/FundamentalCuts.cpp
     src/FundamentalCycles.cpp
+    src/EdmondsMatching.cpp
 )

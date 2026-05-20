@@ -26,6 +26,7 @@
 #include "include/MaxMatching.h"
 #include "include/EulerianCycle.h"
 #include "include/FundamentalCycles.h"
+#include "include/EdmondsMatching.h"
 
 // ============================================================================
 // Helper Functions
@@ -1094,10 +1095,34 @@ int main() {
                     targetName = "spanning tree";
                 }
 
-                GreedyMaximalMatching matcher(*target);
-                MatchingResult result = matcher.compute();
+                // Choose algorithm.
+                std::cout << "\nAlgorithm:\n";
+                std::cout << "  1. Greedy (maximal by inclusion -- per lecture definition)\n";
+                std::cout << "  2. Edmonds blossom (guaranteed MAXIMUM cardinality)\n";
+                std::cout << "> ";
 
-                std::cout << "\n=== MAXIMAL MATCHING on " << targetName << " ===\n";
+                int algoOption;
+                while (!(std::cin >> algoOption) ||
+                       (algoOption != 1 && algoOption != 2)) {
+                    std::cin.clear();
+                    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                    std::cout << "Invalid. Enter 1 or 2: ";
+                }
+
+                MatchingResult result;
+                std::string algoName;
+                if (algoOption == 1) {
+                    GreedyMaximalMatching matcher(*target);
+                    result = matcher.compute();
+                    algoName = "GREEDY MAXIMAL";
+                } else {
+                    EdmondsMatching matcher(*target);
+                    result = matcher.compute();
+                    algoName = "EDMONDS MAXIMUM";
+                }
+
+                std::cout << "\n=== " << algoName << " MATCHING on "
+                          << targetName << " ===\n";
                 std::cout << "Matching size: " << result.matchingSize << "\n";
 
                 std::cout << "\nMatching edges:\n";
