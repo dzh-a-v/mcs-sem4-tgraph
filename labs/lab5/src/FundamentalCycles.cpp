@@ -18,6 +18,14 @@ std::pair<int,int> normEdge(int u, int v) {
     return {u, v};
 }
 
+// Lexicographic order on normalized edges: first by the first endpoint, then
+// by the second.  Making this comparator explicit keeps the intended display
+// order obvious at the call site.
+bool edgeLess(const std::pair<int,int>& lhs, const std::pair<int,int>& rhs) {
+    if (lhs.first != rhs.first) return lhs.first < rhs.first;
+    return lhs.second < rhs.second;
+}
+
 // In a tree there is exactly one simple path between any two vertices.
 // BFS from `start` until we hit `target`, recording where we came from so
 // we can reconstruct the path by walking predecessors backwards.
@@ -105,7 +113,7 @@ std::vector<FundamentalCycle> FundamentalCycleSystem::compute() const {
         cycle.edges.push_back(key);  // the chord
 
         // Sort for deterministic display and to make XOR easier (linear merge).
-        std::sort(cycle.edges.begin(), cycle.edges.end());
+        std::sort(cycle.edges.begin(), cycle.edges.end(), edgeLess);
         cycles.push_back(std::move(cycle));
     }
 
