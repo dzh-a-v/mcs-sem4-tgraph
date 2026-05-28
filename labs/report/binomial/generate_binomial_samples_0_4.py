@@ -3,10 +3,15 @@ import random
 
 
 N = 4
-P = 0.5
+PARAMETERS = [
+    ("a", 0.18),
+    ("b", 0.82),
+    ("v", 0.5),
+    ("g", 0.6),
+]
 SAMPLE_COUNT = 1000
 SEED = 42
-OUTPUT_PATH = Path(__file__).with_name("binomial_samples_0_4_1000.txt")
+OUTPUT_DIR = Path(__file__).parent
 
 
 def sample_binomial(n: int, p: float, rng: random.Random) -> int:
@@ -27,15 +32,15 @@ def sample_binomial(n: int, p: float, rng: random.Random) -> int:
 
 
 def main() -> None:
-    rng = random.Random(SEED)
-    samples = [sample_binomial(N, P, rng) for _ in range(SAMPLE_COUNT)]
-
-    OUTPUT_PATH.write_text(
-        "\n".join(str(value) for value in samples) + "\n",
-        encoding="utf-8",
-    )
-
-    print(f"Saved {len(samples)} samples to {OUTPUT_PATH}")
+    for index, (name, p) in enumerate(PARAMETERS):
+        rng = random.Random(SEED + index)
+        samples = [sample_binomial(N, p, rng) for _ in range(SAMPLE_COUNT)]
+        output_path = OUTPUT_DIR / f"binomial_samples_0_4_{name}.txt"
+        output_path.write_text(
+            "\n".join(str(value) for value in samples) + "\n",
+            encoding="utf-8",
+        )
+        print(f"Saved {len(samples)} samples to {output_path}")
 
 
 if __name__ == "__main__":
