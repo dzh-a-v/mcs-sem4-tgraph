@@ -173,7 +173,7 @@ std::vector<FundamentalCycle> FundamentalCycleSystem::compute() const {
         }
         cycle.edges.push_back(key);  // the chord
 
-        // Sort for deterministic display and to make XOR easier (linear merge).
+        // Sort for deterministic display and to make symmetric difference easier.
         std::sort(cycle.edges.begin(), cycle.edges.end(), edgeLess);
         cycles.push_back(std::move(cycle));
     }

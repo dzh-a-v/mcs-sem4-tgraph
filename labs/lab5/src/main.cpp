@@ -1450,9 +1450,9 @@ int main() {
                 if (picks.empty()) {
                     std::cout << "\nResult of empty input:\n";
                 } else {
-                    // XOR the picks together left-to-right.
-                    // Since (A xor B) xor C = A xor (B xor C), order does not change
-                    // the final set, but we accumulate left to right anyway.
+                    // Apply symmetric difference left-to-right.
+                    // Since this operation is associative, the final edge set
+                    // does not depend on how the expression is parenthesized.
                     acc = lastFundamentalCycles[picks[0] - 1].edges;
                     for (size_t i = 1; i < picks.size(); ++i) {
                         acc = FundamentalCycleSystem::symmetricDifference(
@@ -1461,7 +1461,7 @@ int main() {
 
                     std::cout << "\nResult of C" << picks[0];
                     for (size_t i = 1; i < picks.size(); ++i) {
-                        std::cout << " XOR C" << picks[i];
+                        std::cout << " /_\\ C" << picks[i];
                     }
                     std::cout << ":\n";
                 }

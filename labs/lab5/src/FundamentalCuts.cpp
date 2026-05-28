@@ -75,7 +75,7 @@ std::vector<FundamentalCut> FundamentalCutSystem::compute() const {
                 cut.edges.push_back(normEdge(e.from, e.to));
             }
         }
-        // Sort for deterministic display and to make XOR easier.
+        // Sort for deterministic display and to make symmetric difference easier.
         std::sort(cut.edges.begin(), cut.edges.end());
         cuts.push_back(std::move(cut));
     }

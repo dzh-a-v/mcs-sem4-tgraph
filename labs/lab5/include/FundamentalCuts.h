@@ -26,7 +26,7 @@ public:
     /// the result has size (n - 1) for an n-vertex connected graph.
     std::vector<FundamentalCut> compute() const;
 
-    /// Symmetric difference (XOR) of edge sets:
+    /// Symmetric difference of edge sets:
     ///   present in exactly one of `a`, `b`.
     /// This is the operation that combines cuts in the cut-space basis.
     static std::vector<std::pair<int,int>> symmetricDifference(

@@ -25,9 +25,9 @@ public:
     /// the result has size m - n + 1 for a connected n-vertex, m-edge graph.
     std::vector<FundamentalCycle> compute() const;
 
-    /// Symmetric difference (XOR) of edge sets:
+    /// Symmetric difference of edge sets:
     ///   present in exactly one of `a`, `b`.
-    /// XOR-ing fundamental cycles in the cycle space gives every cycle of G
+    /// Combining fundamental cycles by symmetric difference gives every cycle of G
     /// (or a disjoint union of cycles, i.e. an "even subgraph").
     /// Both inputs are expected to be sorted (compute() returns sorted edge
     /// lists), and the output is sorted too.
