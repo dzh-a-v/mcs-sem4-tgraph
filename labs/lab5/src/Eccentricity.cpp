@@ -104,11 +104,16 @@ std::vector<std::vector<int>> GraphAnalyzer::findAllPathsWithExactEdges(
 
 EccentricityData GraphAnalyzer::analyze() {
     EccentricityData result;
-    result.radius = std::numeric_limits<int>::max();
+    result.radius = -1;
     result.diameter = -1;
 
     auto vertices = m_graph.vertexIds();
+    if (vertices.empty()) {
+        return result;
+    }
+
     auto edgeCounts = computeEdgeCountPaths();
+    bool hasComputedEccentricity = false;
 
     // Compute eccentricities (maximum edge distance for each vertex)
     for (int v : vertices) {
@@ -134,8 +139,14 @@ EccentricityData GraphAnalyzer::analyze() {
         
         // Only consider vertices with non-negative eccentricity for radius/diameter
         if (result.eccentricities[v] >= 0) {
-            result.radius = std::min(result.radius, result.eccentricities[v]);
-            result.diameter = std::max(result.diameter, result.eccentricities[v]);
+            if (!hasComputedEccentricity) {
+                result.radius = result.eccentricities[v];
+                result.diameter = result.eccentricities[v];
+                hasComputedEccentricity = true;
+            } else {
+                result.radius = std::min(result.radius, result.eccentricities[v]);
+                result.diameter = std::max(result.diameter, result.eccentricities[v]);
+            }
         }
     }
 
