@@ -28,7 +28,12 @@ def sample_binomial(n: int, p: float, rng: random.Random) -> int:
 
 def main() -> None:
     rng = random.Random(SEED)
-    samples = [sample_binomial(N, P, rng) for _ in range(SAMPLE_COUNT)]
+    samples = []
+    for _ in range(SAMPLE_COUNT):
+        value = 0
+        while value == 0:
+            value = sample_binomial(N, P, rng)
+        samples.append(value)
 
     OUTPUT_PATH.write_text(
         "\n".join(str(value) for value in samples) + "\n",

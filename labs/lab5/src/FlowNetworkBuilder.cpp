@@ -1,5 +1,16 @@
 #include "include/FlowNetworkBuilder.h"
 
+namespace {
+int sampleNonZeroBinomial(AcyclicGraphBuilder& generator, int n, double p) {
+    int value = 0;
+    while (value == 0) {
+        value = generator.sampleBinomial(n, p);
+    }
+
+    return value;
+}
+}
+
 std::unique_ptr<FlowNetwork> FlowNetworkBuilder::buildFromGraph(const AdjacencyGraph& graph) {
     // flow network is always directed in this lab
     auto network = std::make_unique<FlowNetwork>(true);
@@ -19,9 +30,9 @@ std::unique_ptr<FlowNetwork> FlowNetworkBuilder::buildFromGraph(const AdjacencyG
 }
 
 int FlowNetworkBuilder::generateRandomCapacity() {
-    return m_generator.sampleBinomial(BINOMIAL_N_WEIGHT, BINOMIAL_P_WEIGHT);
+    return sampleNonZeroBinomial(m_generator, BINOMIAL_N_WEIGHT, BINOMIAL_P_WEIGHT);
 }
 
 int FlowNetworkBuilder::generateRandomCost() {
-    return m_generator.sampleBinomial(BINOMIAL_N_WEIGHT, BINOMIAL_P_WEIGHT);
+    return sampleNonZeroBinomial(m_generator, BINOMIAL_N_WEIGHT, BINOMIAL_P_WEIGHT);
 }

@@ -78,13 +78,7 @@ int AcyclicGraphBuilder::sampleBinomial(int n, double p) {
 }
 
 namespace {
-double makeNonZeroWeight(int baseWeight, WeightSign weightSign, std::mt19937& rng) {
-    // Edge weights in the lab must never be zero.
-    // If the binomial sample produced 0, shift it to 1 before applying sign.
-    if (baseWeight == 0) {
-        baseWeight = 1;
-    }
-
+double applyWeightSign(int baseWeight, WeightSign weightSign, std::mt19937& rng) {
     switch (weightSign) {
         case WeightSign::Positive:
             return static_cast<double>(baseWeight);
@@ -103,8 +97,12 @@ double makeNonZeroWeight(int baseWeight, WeightSign weightSign, std::mt19937& rn
 }
 
 double AcyclicGraphBuilder::sampleWeight(WeightSign weightSign) {
-    int baseWeight = sampleBinomial(BINOMIAL_N_WEIGHT, BINOMIAL_P_WEIGHT);
-    return makeNonZeroWeight(baseWeight, weightSign, m_rng);
+    int baseWeight = 0;
+    while (baseWeight == 0) {
+        baseWeight = sampleBinomial(BINOMIAL_N_WEIGHT, BINOMIAL_P_WEIGHT);
+    }
+
+    return applyWeightSign(baseWeight, weightSign, m_rng);
 }
 
 // Check if graph is connected using BFS

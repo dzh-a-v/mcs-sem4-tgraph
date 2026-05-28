@@ -2,8 +2,8 @@ input_path <- "binomial_samples_1000.txt"
 output_path <- "binomial_histogram.png"
 
 samples <- scan(input_path, what = integer(), quiet = TRUE)
-break_points <- seq(min(samples) - 0.5, max(samples) + 0.5, by = 1)
-label_points <- min(samples):max(samples)
+break_points <- seq(0.5, 10.5, by = 1)
+label_points <- 1:10
 
 png(filename = output_path, width = 1400, height = 900, res = 150)
 par(mar = c(6, 4.5, 4.5, 2))
