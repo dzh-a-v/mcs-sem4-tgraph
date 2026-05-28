@@ -347,7 +347,7 @@ EulerianCycleResult EulerianCycleBuilder::compute(
 
         const int u = components[0].front();
         const int v = components[1].front();
-        G.addEdge(u, v, 0.0);  // weight 0: we made this edge up
+        G.addEdge(u, v, 1.0);
         result.additions.push_back({u, v, true, "connect components"});
     }
 
@@ -412,7 +412,7 @@ EulerianCycleResult EulerianCycleBuilder::compute(
 
         // Apply the chosen pairing.
         for (const auto& [u, v] : pairs) {
-            G.addEdge(u, v, 0.0);
+            G.addEdge(u, v, 1.0);
             result.additions.push_back({u, v, true, "fix odd parity"});
         }
     }

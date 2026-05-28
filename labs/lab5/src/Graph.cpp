@@ -10,6 +10,10 @@ void AdjacencyGraph::addVertex(int id) {
 }
 
 void AdjacencyGraph::addEdge(int from, int to, double weight) {
+    if (weight == 0.0) {
+        weight = 1.0;
+    }
+
     addVertex(from);
     addVertex(to);
     m_adj[from].push_back({to, weight});

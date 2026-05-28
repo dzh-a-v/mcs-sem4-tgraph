@@ -77,9 +77,14 @@ int AcyclicGraphBuilder::sampleBinomial(int n, double p) {
     }
 }
 
-double AcyclicGraphBuilder::sampleWeight(WeightSign weightSign) {
-    int baseWeight = sampleBinomial(BINOMIAL_N_WEIGHT, BINOMIAL_P_WEIGHT);
-    
+namespace {
+double makeNonZeroWeight(int baseWeight, WeightSign weightSign, std::mt19937& rng) {
+    // Edge weights in the lab must never be zero.
+    // If the binomial sample produced 0, shift it to 1 before applying sign.
+    if (baseWeight == 0) {
+        baseWeight = 1;
+    }
+
     switch (weightSign) {
         case WeightSign::Positive:
             return static_cast<double>(baseWeight);
@@ -87,12 +92,19 @@ double AcyclicGraphBuilder::sampleWeight(WeightSign weightSign) {
             return -static_cast<double>(baseWeight);
         case WeightSign::Mixed: {
             std::uniform_int_distribution<int> coinFlip(0, 1);
-            return coinFlip(m_rng) ? 
-                static_cast<double>(baseWeight) : 
-                -static_cast<double>(baseWeight);
+            return coinFlip(rng)
+                ? static_cast<double>(baseWeight)
+                : -static_cast<double>(baseWeight);
         }
     }
+
     return static_cast<double>(baseWeight);
+}
+}
+
+double AcyclicGraphBuilder::sampleWeight(WeightSign weightSign) {
+    int baseWeight = sampleBinomial(BINOMIAL_N_WEIGHT, BINOMIAL_P_WEIGHT);
+    return makeNonZeroWeight(baseWeight, weightSign, m_rng);
 }
 
 // Check if graph is connected using BFS
@@ -204,16 +216,9 @@ static std::unique_ptr<AdjacencyGraph> tryBuildGraph(
         // This allows flexibility to reach targetEdges
         if (uBlocked && vBlocked) continue;
 
-        // Generate weight using binomial
+        // Generate a non-zero weight using the same binomial base.
         int baseWeight = builder.sampleBinomial(BINOMIAL_N_WEIGHT, BINOMIAL_P_WEIGHT);
-        double weight = static_cast<double>(baseWeight);
-
-        if (weightSign == WeightSign::Negative) {
-            weight = -weight;
-        } else if (weightSign == WeightSign::Mixed) {
-            std::uniform_int_distribution<int> sign(0, 1);
-            if (sign(rng)) weight = -weight;
-        }
+        double weight = makeNonZeroWeight(baseWeight, weightSign, rng);
 
         graph->addEdge(u, v, weight);
         addedEdges.insert({u, v});
