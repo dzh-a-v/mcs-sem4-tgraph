@@ -1503,9 +1503,9 @@ int main() {
                     }
                 }
 
-                std::cout << "(Note: after symmetric difference the result is always an\n";
-                std::cout << " even subgraph. It may be one cycle or a union of several\n";
-                std::cout << " cycles, so we reconstruct as much as the edge set allows.)\n";
+                // std::cout << "(Note: after symmetric difference the result is always an\n";
+                // std::cout << " even subgraph. It may be one cycle or a union of several\n";
+                // std::cout << " cycles, so we reconstruct as much as the edge set allows.)\n";
                 break;
             }
 

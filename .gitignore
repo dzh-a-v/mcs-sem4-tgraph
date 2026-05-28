@@ -13,3 +13,4 @@ examples/
 miktex/
 build_*/
 TGraphFull.pdf
+*.txt
