@@ -3,3 +3,13 @@ instructions/
 TODO.md
 books/
 out/
+
+1.tex
+2.tex
+3.tex
+4.tex
+examples/
+.claude/
+miktex/
+build_*/
+TGraphFull.pdf

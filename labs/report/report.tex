@@ -55,11 +55,12 @@
     captionpos=b
 }
 
-\newcommand{\funcblock}[4]{%
-\noindent\code{#1}\\
+\newcommand{\funcblock}[5]{%
+\noindent\textbf{Метод }\code{#1}\\
 \textbf{Вход:} #2\\
 \textbf{Выход:} #3\\
-Код представлен в листинге~\ref{#4}.%
+\textbf{Описание:} #4\\
+Код представлен в листинге~\ref{#5}.%
 }
 
 \renewcommand{\contentsname}{Содержание}
@@ -125,25 +126,54 @@
 \newpage
 \section{Постановка задачи}
 
-Целью работы являлась реализация набора алгоритмов теории графов и объединение их в единый программный комплекс с текстовым пользовательским интерфейсом. В ходе выполнения лабораторных работ требовалось:
+Целью работы являлась реализация набора алгоритмов теории графов и объединение их в единый программный комплекс с текстовым пользовательским интерфейсом. В ходе выполнения лабораторных работ требовалось решить следующие задачи:
+
+\textbf{Лабораторная работа №1}
 
 \begin{enumerate}
-    \item реализовать генерацию графа на основе биномиального распределения, а также базовые алгоритмы его анализа;
-    \item реализовать обход графа в ширину, классический алгоритм Дейкстры и сравнение алгоритмов по числу итераций;
-    \item построить сеть потоков по ориентированному графу, найти максимальный поток и поток минимальной стоимости;
-    \item вычислить число остовных деревьев по теореме Кирхгофа, построить минимальный остов, закодировать его кодом Прюфера и найти паросочетание;
-    \item проверить граф на эйлеровость, при необходимости модифицировать его, построить эйлеров обход, а также исследовать цикловую структуру графа.
+    \item реализовать генерацию графа на основе биномиального распределения;
+    \item реализовать вычисление эксцентриситетов вершин;
+    \item реализовать поиск центра графа;
+    \item реализовать определение диаметральных вершин графа;
+    \item реализовать метод Шимбелла;
+    \item реализовать поиск всех простых путей между двумя вершинами.
 \end{enumerate}
 
-Содержательно задачи лабораторных работ распределяются следующим образом:
+\textbf{Лабораторная работа №2}
 
-\begin{itemize}
-    \item лабораторная работа №1: генерация графа, эксцентриситеты, центр, диаметральные вершины, метод Шимбелла, поиск всех простых путей;
-    \item лабораторная работа №2: BFS, алгоритм Дейкстры, сравнение алгоритмов;
-    \item лабораторная работа №3: сеть потоков, максимальный поток, поток минимальной стоимости;
-    \item лабораторная работа №4: теорема Кирхгофа, алгоритм Краскала, код Прюфера, независимое множество рёбер;
-    \item лабораторная работа №5: эйлеров цикл, эйлеризация, фундаментальная система циклов и симметрическая разность.
-\end{itemize}
+\begin{enumerate}[start=7]
+    \item реализовать обход графа в ширину;
+    \item реализовать классический алгоритм Дейкстры;
+    \item реализовать сравнение алгоритмов по числу итераций.
+\end{enumerate}
+
+\textbf{Лабораторная работа №3}
+
+\begin{enumerate}[start=10]
+    \item реализовать построение сети потоков по ориентированному графу;
+    \item реализовать поиск максимального потока;
+    \item реализовать поиск потока минимальной стоимости.
+\end{enumerate}
+
+\textbf{Лабораторная работа №4}
+
+\begin{enumerate}[start=13]
+    \item реализовать вычисление числа остовных деревьев по теореме Кирхгофа;
+    \item реализовать построение минимального остова алгоритмом Краскала;
+    \item реализовать кодирование дерева кодом Прюфера;
+    \item реализовать декодирование дерева по коду Прюфера;
+    \item реализовать поиск паросочетания.
+\end{enumerate}
+
+\textbf{Лабораторная работа №5}
+
+\begin{enumerate}[start=18]
+    \item реализовать проверку графа на эйлеровость;
+    \item реализовать эйлеризацию графа при необходимости;
+    \item реализовать построение эйлерова обхода;
+    \item реализовать построение фундаментальной системы циклов;
+    \item реализовать операцию симметрической разности циклов.
+\end{enumerate}
 
 Помимо собственно алгоритмов, требовалось реализовать пользовательское меню, проверки входных данных и повторное использование уже построенных структур в рамках одного сеанса работы программы.
 
@@ -190,6 +220,7 @@ R(G)=\min_{v \in V} e(v),
 {sampleBinomial(n, p)}
 {параметры биномиального распределения \(n\) и \(p\), а также внутреннее состояние генератора случайных чисел класса.}
 {одно целое случайное значение, распределённое по биномиальному закону.}
+{генерирует случайное число по биномиальному распределению.}
 {lst:lab1-sample-binomial}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{sampleBinomial(n, p)}},label={lst:lab1-sample-binomial}]
 int sampleBinomial(int n, double p);
@@ -199,6 +230,7 @@ int sampleBinomial(int n, double p);
 {generateAcyclicGraph(vertices, directed, weightSign)}
 {количество вершин, признак ориентированности графа, режим генерации весов, а также внутренние параметры биномиального распределения, закреплённые в классе.}
 {указатель на сгенерированный граф, содержащий вершины, рёбра и веса.}
+{строит граф с заданным числом вершин и режимом генерации весов.}
 {lst:lab1-generate-acyclic-graph}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{generateAcyclicGraph(vertices, directed, weightSign)}},label={lst:lab1-generate-acyclic-graph}]
 std::unique_ptr<AdjacencyGraph> generateAcyclicGraph(
@@ -212,6 +244,7 @@ std::unique_ptr<AdjacencyGraph> generateAcyclicGraph(
 {computeDegreeStatistics(graph)}
 {уже построенный граф.}
 {структура со средним значением степени, дисперсией, стандартным отклонением, минимальной и максимальной степенью.}
+{вычисляет основные статистики по степеням вершин графа.}
 {lst:lab1-compute-degree-statistics}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{computeDegreeStatistics(graph)}},label={lst:lab1-compute-degree-statistics}]
 static DegreeStatistics computeDegreeStatistics(
@@ -229,6 +262,7 @@ static DegreeStatistics computeDegreeStatistics(
 {computeEdgeCountPaths()}
 {граф, сохранённый во внутреннем состоянии объекта \code{GraphAnalyzer}.}
 {таблица расстояний между всеми упорядоченными парами вершин, где расстояние измеряется числом рёбер, а для недостижимых пар фиксируется специальное значение.}
+{вычисляет расстояния между всеми парами вершин по числу рёбер.}
 {lst:lab1-compute-edge-count-paths}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{computeEdgeCountPaths()}},label={lst:lab1-compute-edge-count-paths}]
 std::map<std::pair<int, int>, int> computeEdgeCountPaths() const;
@@ -238,6 +272,7 @@ std::map<std::pair<int, int>, int> computeEdgeCountPaths() const;
 {analyze()}
 {граф, переданный объекту при создании класса.}
 {структура \code{EccentricityData}, содержащая эксцентриситеты, радиус, диаметр, центр графа, диаметральные вершины и набор диаметральных путей.}
+{находит основные метрические характеристики графа.}
 {lst:lab1-analyze}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{analyze()}},label={lst:lab1-analyze}]
 EccentricityData analyze();
@@ -251,6 +286,7 @@ EccentricityData analyze();
 {buildWeightMatrix()}
 {граф, сохранённый внутри объекта \code{KPathCalculator}.}
 {базовая матрица весов для путей длины 1.}
+{строит матрицу весов для путей, состоящих из одного ребра.}
 {lst:lab1-build-weight-matrix}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{buildWeightMatrix()}},label={lst:lab1-build-weight-matrix}]
 WeightTable buildWeightMatrix() const;
@@ -260,6 +296,7 @@ WeightTable buildWeightMatrix() const;
 {multiplyMinPlus(left, right)}
 {две матрицы весов путей.}
 {матрица минимальных суммарных весов при композиции путей.}
+{перемножает две матрицы по правилу \((\min, +)\).}
 {lst:lab1-multiply-min-plus}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{multiplyMinPlus(left, right)}},label={lst:lab1-multiply-min-plus}]
 WeightTable multiplyMinPlus(
@@ -272,6 +309,7 @@ WeightTable multiplyMinPlus(
 {multiplyMaxPlus(left, right)}
 {две матрицы весов путей.}
 {матрица максимальных суммарных весов при композиции путей.}
+{перемножает две матрицы по правилу \((\max, +)\).}
 {lst:lab1-multiply-max-plus}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{multiplyMaxPlus(left, right)}},label={lst:lab1-multiply-max-plus}]
 WeightTable multiplyMaxPlus(
@@ -284,6 +322,7 @@ WeightTable multiplyMaxPlus(
 {compute(edgeCount)}
 {требуемое число рёбер \(k\) и граф, связанный с объектом класса.}
 {структура \code{ShimbellOutput}, содержащая матрицу минимальных весов, матрицу максимальных весов и само значение \(k\).}
+{вычисляет минимальные и максимальные веса путей длины \(k\).}
 {lst:lab1-shimbell-compute}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{compute(edgeCount)}},label={lst:lab1-shimbell-compute}]
 ShimbellOutput compute(int edgeCount);
@@ -297,6 +336,7 @@ ShimbellOutput compute(int edgeCount);
 {findAllPaths(from, to)}
 {номера начальной и конечной вершин, а также граф, сохранённый в объекте \code{SimplePathFinder}.}
 {коллекция всех найденных простых путей между указанными вершинами.}
+{находит все простые пути между двумя вершинами.}
 {lst:lab1-find-all-paths}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{findAllPaths(from, to)}},label={lst:lab1-find-all-paths}]
 PathCollection findAllPaths(int from, int to);
@@ -306,6 +346,7 @@ PathCollection findAllPaths(int from, int to);
 {countPaths(from, to)}
 {те же две вершины и граф, связанный с объектом класса.}
 {количество простых путей между ними.}
+{подсчитывает число простых путей между двумя вершинами.}
 {lst:lab1-count-paths}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{countPaths(from, to)}},label={lst:lab1-count-paths}]
 int countPaths(int from, int to);
@@ -315,6 +356,7 @@ int countPaths(int from, int to);
 {dfsExplore(current, target, visited, path, allPaths)}
 {текущая вершина обхода, целевая вершина, массив посещённых вершин, текущий путь и контейнер для всех найденных путей.}
 {модифицированный контейнер \code{allPaths}, в который добавляются найденные пути; отдельного возвращаемого значения функция не имеет.}
+{рекурсивно расширяет текущий путь и сохраняет найденные маршруты.}
 {lst:lab1-dfs-explore}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{dfsExplore(current, target, visited, path, allPaths)}},label={lst:lab1-dfs-explore}]
 void dfsExplore(
@@ -375,6 +417,7 @@ void dfsExplore(
 {traverseWithLevels(startVertex)}
 {стартовая вершина и граф, заранее сохранённый во внутреннем состоянии класса \code{BreadthFirstSearch}.}
 {структура \code{BFSResult}, содержащая порядок обхода, уровни, число итераций и максимальную глубину.}
+{выполняет обход в ширину и определяет уровни вершин.}
 {lst:lab2-traverse-with-levels}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{traverseWithLevels(startVertex)}},label={lst:lab2-traverse-with-levels}]
 BFSResult traverseWithLevels(int startVertex);
@@ -388,6 +431,7 @@ BFSResult traverseWithLevels(int startVertex);
 {findShortestPaths(startVertex, targetVertex)}
 {стартовая вершина, необязательная целевая вершина и граф, связанный с объектом \code{DijkstraAlgorithm}.}
 {структура \code{DijkstraResult}, содержащая расстояния до достижимых вершин, предшественников, восстановленный кратчайший путь до цели, итоговое расстояние и число итераций.}
+{находит кратчайшие пути от стартовой вершины алгоритмом Дейкстры.}
 {lst:lab2-find-shortest-paths}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{findShortestPaths(startVertex, targetVertex)}},label={lst:lab2-find-shortest-paths}]
 DijkstraResult findShortestPaths(
@@ -400,6 +444,7 @@ DijkstraResult findShortestPaths(
 {reconstructPath(startVertex, targetVertex, H, vertexIds)}
 {начальная вершина, конечная вершина, массив предшественников и список идентификаторов вершин.}
 {последовательность вершин, задающая найденный кратчайший путь; если путь не существует, возвращается пустой вектор.}
+{восстанавливает путь по массиву предшественников.}
 {lst:lab2-reconstruct-path}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{reconstructPath(startVertex, targetVertex, H, vertexIds)}},label={lst:lab2-reconstruct-path}]
 std::vector<int> reconstructPath(
@@ -418,6 +463,7 @@ std::vector<int> reconstructPath(
 {compare(startVertex)}
 {стартовая вершина и граф, сохранённый в объекте \code{AlgorithmComparator}.}
 {структура \code{AlgorithmComparison}, содержащая число итераций BFS, число итераций алгоритма Дейкстры и коэффициент сравнения.}
+{сравнивает BFS и алгоритм Дейкстры по числу итераций.}
 {lst:lab2-compare}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{compare(startVertex)}},label={lst:lab2-compare}]
 AlgorithmComparison compare(int startVertex);
@@ -460,6 +506,7 @@ AlgorithmComparison compare(int startVertex);
 {buildFromGraph(graph)}
 {ориентированный граф, задающий топологию сети.}
 {новая сеть потоков, в которой вершины и дуги унаследованы от исходного графа, а пропускные способности и стоимости сгенерированы автоматически.}
+{строит сеть потоков по ориентированному графу.}
 {lst:lab3-build-from-graph}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{buildFromGraph(graph)}},label={lst:lab3-build-from-graph}]
 std::unique_ptr<FlowNetwork> buildFromGraph(
@@ -475,6 +522,7 @@ std::unique_ptr<FlowNetwork> buildFromGraph(
 {residualNeighbors(vertex)}
 {вершина сети потоков и текущее состояние всех потоков в объекте \code{FlowNetwork}.}
 {список остаточных дуг, по которым поток можно увеличить или уменьшить.}
+{возвращает доступные переходы из вершины в остаточной сети.}
 {lst:lab3-residual-neighbors}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{residualNeighbors(vertex)}},label={lst:lab3-residual-neighbors}]
 std::vector<ResidualArc> residualNeighbors(int vertex) const;
@@ -484,6 +532,7 @@ std::vector<ResidualArc> residualNeighbors(int vertex) const;
 {getCapacityMatrix(), getCostMatrix(), getFlowMatrix()}
 {текущее состояние сети потоков.}
 {соответствующие матричные представления пропускных способностей, стоимостей и текущего потока.}
+{возвращает матрицы пропускных способностей, стоимостей и текущего потока.}
 {lst:lab3-flow-matrices}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функций получения матриц сети потока},label={lst:lab3-flow-matrices}]
 FlowMatrix getCapacityMatrix() const;
@@ -495,6 +544,7 @@ FlowMatrix getFlowMatrix() const;
 {augment(edgeIndex, forward, delta)}
 {индекс исходной дуги, признак прямого или обратного прохода и величина изменения потока.}
 {обновлённое внутреннее состояние сети; отдельного возвращаемого значения функция не имеет.}
+{изменяет поток по выбранной дуге на заданную величину.}
 {lst:lab3-augment}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{augment(edgeIndex, forward, delta)}},label={lst:lab3-augment}]
 void augment(int edgeIndex, bool forward, int delta);
@@ -517,6 +567,7 @@ void augment(int edgeIndex, bool forward, int delta);
 {compute(source, sink)}
 {вершины истока и стока, а также сеть потоков, связанная с объектом \code{MaxFlowSolver}.}
 {структура \code{MaxFlowResult}, содержащая значение максимального потока и последовательность увеличивающих шагов.}
+{находит максимальный поток между истоком и стоком.}
 {lst:lab3-maxflow-compute}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{compute(source, sink)} для максимального потока},label={lst:lab3-maxflow-compute}]
 MaxFlowResult compute(int source, int sink);
@@ -526,6 +577,7 @@ MaxFlowResult compute(int source, int sink);
 {bfs(source, sink, parent)}
 {исток, сток, остаточная сеть, задаваемая текущим состоянием объекта \code{FlowNetwork}, и контейнер для предков.}
 {логическое значение, показывающее, найден ли увеличивающий путь; дополнительно по ссылке заполняется структура предков, описывающая этот путь.}
+{ищет увеличивающий путь в остаточной сети.}
 {lst:lab3-maxflow-bfs}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{bfs(source, sink, parent)}},label={lst:lab3-maxflow-bfs}]
 bool bfs(
@@ -543,6 +595,7 @@ bool bfs(
 {compute(source, sink, targetFlow)}
 {исток, сток, требуемая величина потока и сеть потоков, закреплённая за объектом \code{MinCostFlowSolver}.}
 {структура \code{MinCostFlowResult}, содержащая целевой и достигнутый поток, полную стоимость и пошаговую историю увеличений.}
+{находит поток минимальной стоимости заданной величины.}
 {lst:lab3-mincost-compute}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{compute(source, sink, targetFlow)}},label={lst:lab3-mincost-compute}]
 MinCostFlowResult compute(int source, int sink, int targetFlow);
@@ -552,6 +605,7 @@ MinCostFlowResult compute(int source, int sink, int targetFlow);
 {dijkstra(source, sink, distances, parent)}
 {исток, сток, текущее состояние остаточной сети и контейнеры для расстояний и предков.}
 {логическое значение, показывающее существование допустимого пути минимальной стоимости; дополнительно заполняются отображения расстояний и дуг-предков.}
+{ищет кратчайший по стоимости путь в остаточной сети.}
 {lst:lab3-mincost-dijkstra}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{dijkstra(source, sink, distances, parent)}},label={lst:lab3-mincost-dijkstra}]
 bool dijkstra(
@@ -597,6 +651,7 @@ B(G)=D-A.
 {buildKirchhoffMatrix()}
 {граф, сохранённый в объекте \code{KirchhoffCounter}.}
 {матрица Кирхгофа \(B(G)=D-A\).}
+{строит матрицу Кирхгофа для заданного графа.}
 {lst:lab4-build-kirchhoff-matrix}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{buildKirchhoffMatrix()}},label={lst:lab4-build-kirchhoff-matrix}]
 std::vector<std::vector<int>> buildKirchhoffMatrix() const;
@@ -606,6 +661,7 @@ std::vector<std::vector<int>> buildKirchhoffMatrix() const;
 {determinantOfFirstMinor(matrix)}
 {матрица Кирхгофа.}
 {целое число, равное детерминанту выбранного минора.}
+{вычисляет определитель минора матрицы Кирхгофа.}
 {lst:lab4-determinant-first-minor}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{determinantOfFirstMinor(matrix)}},label={lst:lab4-determinant-first-minor}]
 long long determinantOfFirstMinor(
@@ -617,6 +673,7 @@ long long determinantOfFirstMinor(
 {compute()}
 {граф, связанный с объектом класса.}
 {структура \code{KirchhoffResult}, содержащая матрицу Кирхгофа и число остовных деревьев.}
+{вычисляет число остовных деревьев графа.}
 {lst:lab4-kirchhoff-compute}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{compute()} класса \code{KirchhoffCounter}},label={lst:lab4-kirchhoff-compute}]
 KirchhoffResult compute();
@@ -630,6 +687,7 @@ KirchhoffResult compute();
 {buildMST()}
 {граф, сохранённый в объекте \code{KruskalMST}.}
 {структура \code{KruskalResult}, содержащая построенный остов, список выбранных рёбер, суммарный вес и признак связности исходного графа.}
+{строит минимальный остов алгоритмом Краскала.}
 {lst:lab4-build-mst}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{buildMST()}},label={lst:lab4-build-mst}]
 KruskalResult buildMST() const;
@@ -643,6 +701,7 @@ KruskalResult buildMST() const;
 {encode(tree)}
 {дерево, представленное объектом \code{AdjacencyGraph}.}
 {структура \code{PruferCode}, содержащая последовательность кода и параллельный массив весов.}
+{кодирует дерево в код Прюфера.}
 {lst:lab4-prufer-encode}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{encode(tree)}},label={lst:lab4-prufer-encode}]
 static PruferCode encode(const AdjacencyGraph& tree);
@@ -652,6 +711,7 @@ static PruferCode encode(const AdjacencyGraph& tree);
 {decode(pruferCode, vertexIds)}
 {код Прюфера с весами и полный список идентификаторов вершин исходного дерева.}
 {заново построенное дерево как объект \code{AdjacencyGraph}.}
+{восстанавливает дерево по коду Прюфера.}
 {lst:lab4-prufer-decode}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{decode(pruferCode, vertexIds)}},label={lst:lab4-prufer-decode}]
 static std::unique_ptr<AdjacencyGraph> decode(
@@ -668,6 +728,7 @@ static std::unique_ptr<AdjacencyGraph> decode(
 {GreedyMaximalMatching::compute()}
 {граф, связанный с объектом класса.}
 {структура \code{MatchingResult}, содержащая выбранные рёбра, непокрытые вершины, размер паросочетания и признак его совершенства.}
+{строит жадное максимальное по включению паросочетание.}
 {lst:lab4-greedy-matching-compute}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{GreedyMaximalMatching::compute()}},label={lst:lab4-greedy-matching-compute}]
 MatchingResult compute() const;
@@ -677,6 +738,7 @@ MatchingResult compute() const;
 {EdmondsMatching::compute()}
 {граф, сохранённый во внутреннем состоянии объекта \code{EdmondsMatching}.}
 {структура \code{MatchingResult}, но уже для паросочетания максимальной мощности.}
+{находит паросочетание максимальной мощности.}
 {lst:lab4-edmonds-matching-compute}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{EdmondsMatching::compute()}},label={lst:lab4-edmonds-matching-compute}]
 MatchingResult compute() const;
@@ -720,7 +782,7 @@ m(G)=|E|-|V|+1.
 
 Каждое добавленное ребро заносится в журнал модификаций. Если исправить нечётность без кратных рёбер невозможно, программа сообщает об этом и предлагает пользователю разрешить переход к мультиграфу. После завершения эйлеризации запускается алгоритм Хиерхольцера, и пользователь получает последовательность вершин эйлерова обхода.
 
-\funcblock{compute(mode)}{исходный неориентированный граф, закреплённый за объектом \code{EulerianCycleBuilder}, и режим эйлеризации, разрешающий или запрещающий мультиграф.}{структура \code{EulerianCycleResult}, содержащая сведения о необходимости модификаций, журнал добавленных рёбер, модифицированный граф и итоговый эйлеров обход.}{lst:lab5-euler-compute}
+\funcblock{compute(mode)}{исходный неориентированный граф, закреплённый за объектом \code{EulerianCycleBuilder}, и режим эйлеризации, разрешающий или запрещающий мультиграф.}{структура \code{EulerianCycleResult}, содержащая сведения о необходимости модификаций, журнал добавленных рёбер, модифицированный граф и итоговый эйлеров обход.}{проверяет граф, при необходимости эйлеризует его и строит эйлеров обход.}{lst:lab5-euler-compute}
 
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{compute(mode)}},label={lst:lab5-euler-compute}]
 EulerianCycleResult compute(
@@ -728,7 +790,7 @@ EulerianCycleResult compute(
 ) const;
 \end{lstlisting}
 
-\funcblock{hierholzer(g, start)}{граф, уже удовлетворяющий условиям существования эйлерова обхода, и стартовая вершина.}{последовательность вершин эйлерова цикла или пути.}{lst:lab5-hierholzer}
+\funcblock{hierholzer(g, start)}{граф, уже удовлетворяющий условиям существования эйлерова обхода, и стартовая вершина.}{последовательность вершин эйлерова цикла или пути.}{строит эйлеров цикл или путь алгоритмом Иерихольцера.}{lst:lab5-hierholzer}
 
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{hierholzer(g, start)}},label={lst:lab5-hierholzer}]
 std::vector<int> hierholzer(
@@ -744,13 +806,13 @@ std::vector<int> hierholzer(
     \item попытка разложения полученного чётного подграфа на простые циклы.
 \end{itemize}
 
-\funcblock{compute()}{исходный граф и остов, сохранённые в объекте \code{FundamentalCycleSystem}.}{список всех фундаментальных циклов.}{lst:lab5-fundamental-compute}
+\funcblock{compute()}{исходный граф и остов, сохранённые в объекте \code{FundamentalCycleSystem}.}{список всех фундаментальных циклов.}{вычисляет систему фундаментальных циклов для выбранного остова.}{lst:lab5-fundamental-compute}
 
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{compute()}},label={lst:lab5-fundamental-compute}]
 std::vector<FundamentalCycle> compute() const;
 \end{lstlisting}
 
-\funcblock{symmetricDifference(a, b)}{два отсортированных множества рёбер, представляющих циклы.}{отсортированное множество рёбер, принадлежащее ровно одному из двух входов.}{lst:lab5-symmetric-difference}
+\funcblock{symmetricDifference(a, b)}{два отсортированных множества рёбер, представляющих циклы.}{отсортированное множество рёбер, принадлежащее ровно одному из двух входов.}{находит симметрическую разность двух циклов.}{lst:lab5-symmetric-difference}
 
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{symmetricDifference(a, b)}},label={lst:lab5-symmetric-difference}]
 static std::vector<std::pair<int, int>>
@@ -760,7 +822,7 @@ symmetricDifference(
 );
 \end{lstlisting}
 
-\funcblock{decomposeIntoCycles(edges)}{множество рёбер чётного подграфа.}{набор восстановленных простых циклов, если такое разложение удалось; в противном случае возвращается пустой результат.}{lst:lab5-decompose-into-cycles}
+\funcblock{decomposeIntoCycles(edges)}{множество рёбер чётного подграфа.}{набор восстановленных простых циклов, если такое разложение удалось; в противном случае возвращается пустой результат.}{раскладывает чётный подграф на простые циклы.}{lst:lab5-decompose-into-cycles}
 
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{decomposeIntoCycles(edges)}},label={lst:lab5-decompose-into-cycles}]
 static std::vector<std::vector<int>>
@@ -838,7 +900,52 @@ decomposeIntoCycles(
 
 В ходе выполнения лабораторных работ был создан единый программный комплекс по теории графов, объединяющий задачи генерации графов, их метрического анализа, обходов, кратчайших путей, сетей потоков, остовных деревьев, кодирования деревьев, паросочетаний и эйлеровых обходов.
 
-В первой лабораторной работе реализованы генерация графа по биномиальному распределению, вычисление эксцентриситетов, центра и диаметра, метод Шимбелла и поиск всех простых путей. Во второй лабораторной работе реализованы обход в ширину, алгоритм Дейкстры и механизм сравнения алгоритмов. В третьей лабораторной работе построена сеть потоков и реализованы алгоритмы максимального потока и потока минимальной стоимости. В четвёртой лабораторной работе реализованы теорема Кирхгофа, алгоритм Краскала, кодирование и декодирование кодом Прюфера, а также поиск паросочетаний. В пятой лабораторной работе реализованы проверка эйлеровости, эйлеризация, построение эйлерова обхода и анализ пространства циклов.
+\textbf{Лабораторная работа №1}
+
+\begin{enumerate}
+    \item реализована генерация графа на основе биномиального распределения;
+    \item реализовано вычисление эксцентриситетов вершин;
+    \item реализован поиск центра графа;
+    \item реализовано определение диаметральных вершин графа;
+    \item реализован метод Шимбелла;
+    \item реализован поиск всех простых путей между двумя вершинами.
+\end{enumerate}
+
+\textbf{Лабораторная работа №2}
+
+\begin{enumerate}[start=7]
+    \item реализован обход графа в ширину;
+    \item реализован классический алгоритм Дейкстры;
+    \item реализовано сравнение алгоритмов по числу итераций.
+\end{enumerate}
+
+\textbf{Лабораторная работа №3}
+
+\begin{enumerate}[start=10]
+    \item реализовано построение сети потоков по ориентированному графу;
+    \item реализован поиск максимального потока;
+    \item реализован поиск потока минимальной стоимости.
+\end{enumerate}
+
+\textbf{Лабораторная работа №4}
+
+\begin{enumerate}[start=13]
+    \item реализовано вычисление числа остовных деревьев по теореме Кирхгофа;
+    \item реализовано построение минимального остова алгоритмом Краскала;
+    \item реализовано кодирование дерева кодом Прюфера;
+    \item реализовано декодирование дерева по коду Прюфера;
+    \item реализован поиск паросочетания.
+\end{enumerate}
+
+\textbf{Лабораторная работа №5}
+
+\begin{enumerate}[start=18]
+    \item реализована проверка графа на эйлеровость;
+    \item реализована эйлеризация графа при необходимости;
+    \item реализовано построение эйлерова обхода;
+    \item реализовано построение фундаментальной системы циклов;
+    \item реализована операция симметрической разности циклов.
+\end{enumerate}
 
 Главным результатом является не просто набор отдельных решений, а интегрированная архитектура, где алгоритмы взаимно дополняют друг друга. Граф, сеть потоков, остов и цикловая структура представлены как связанные сущности, а пользователь может шаг за шагом переходить от одной лабораторной работы к другой в рамках одной программы. Такой подход делает выполненный проект удобным как для учебной демонстрации, так и для дальнейшего расширения.
 
