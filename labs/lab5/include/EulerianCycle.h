@@ -30,16 +30,24 @@ enum class EulerizationMode {
     AllowMultigraph
 };
 
+enum class EulerTraversalKind {
+    None,
+    Cycle,
+    Path
+};
+
 struct EulerianCycleResult {
-    bool wasAlreadyEulerian;                       // true if no edges had to be added
+    bool wasAlreadyEulerian;                       // true if the input already had an Eulerian cycle
+    bool wasSemiEulerian;                         // true if the input already had an Eulerian path (but not a cycle)
     std::vector<EulerianModification> additions;   // edges added, in the order they were added
-    std::vector<int> cycle;                        // vertex sequence v0, v1, ..., vk = v0
-    std::unique_ptr<AdjacencyGraph> modifiedGraph; // graph actually used for the cycle (== input if no changes)
+    std::vector<int> traversal;                    // vertex sequence of the Eulerian cycle/path
+    std::unique_ptr<AdjacencyGraph> modifiedGraph; // graph actually used for the traversal (== input if no changes)
     bool success;                                  // false only for pathological inputs (e.g. empty graph)
+    EulerTraversalKind traversalKind;              // whether `traversal` is a cycle or a path
     /// Set to true only in NonMultigraphOnly mode when eulerization failed
     /// because the only way to fix odd parities would require duplicating
     /// an existing edge (i.e. turning the graph into a multigraph).
-    /// When this is true, `success` is false and `cycle` is empty -- the
+    /// When this is true, `success` is false and `traversal` is empty -- the
     /// caller should ask the user whether to retry in AllowMultigraph mode.
     bool requiresMultigraph;
 };
@@ -48,9 +56,10 @@ class EulerianCycleBuilder {
 public:
     explicit EulerianCycleBuilder(const AdjacencyGraph& graph);
 
-    /// Check the Euler condition (connected + all degrees even on the
-    /// "edge-bearing" subgraph), modify the graph if needed (logging every
-    /// change), then build an Eulerian cycle with Hierholzer's algorithm.
+    /// Check the Euler condition on the "edge-bearing" subgraph.  If the
+    /// graph is already Eulerian, build a cycle.  If it is semi-Eulerian
+    /// (exactly two odd-degree vertices), build a path.  Otherwise modify the
+    /// graph if needed (logging every change), then build an Eulerian cycle.
     ///
     /// `mode` controls whether the builder is allowed to create parallel
     /// edges.  See EulerizationMode for details.

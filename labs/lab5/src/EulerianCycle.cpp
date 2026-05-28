@@ -69,9 +69,10 @@ std::vector<std::vector<int>> connectedComponentsWithEdges(const AdjacencyGraph&
 // Hierholzer's algorithm for an undirected (multi-)graph.
 //
 // Idea: starting at `start`, walk along edges (each used at most once); when
-// stuck, you are guaranteed to be back at `start` because every vertex has
-// even degree.  If unused edges remain, you must have visited some vertex on
-// the current path that still has free edges -- splice a sub-cycle in there.
+// stuck, append the current vertex to the answer and backtrack.  If all
+// degrees are even, the result is an Eulerian cycle.  If exactly two vertices
+// are odd and `start` is one of them, the same routine yields an Eulerian
+// path.
 //
 // Implementation: iterative, using a stack of vertices.  We maintain, per
 // vertex, an "edge iterator" pointing to the next adjacency-list slot that
@@ -101,7 +102,7 @@ std::vector<int> hierholzer(const AdjacencyGraph& g, int start) {
     std::unordered_map<int, size_t> cursor;  // next index to inspect in adj[v]
 
     std::stack<int> path;       // current incomplete walk
-    std::vector<int> cycle;     // result, built in reverse order
+    std::vector<int> trail;     // result, built in reverse order
     
     ////////// S := ∅ { стек для хранения вершин }
     ////////// select v ∈ V { произвольная вершина }
@@ -127,9 +128,9 @@ std::vector<int> hierholzer(const AdjacencyGraph& g, int start) {
         if (i == list.size()) {
             // Stuck at u: no outgoing unused edges left.  Move u into the
             // result and continue from whatever is below it on the stack.
-            // Building the cycle this way (popping) naturally handles the
+            // Building the trail this way (popping) naturally handles the
             // splice case -- subcycles get inserted in the right place.
-            cycle.push_back(u);
+            trail.push_back(u);
             path.pop();
             ////////// if Γ[v] = ∅ then
             //////////     v ← S; yield v { очередная вершина эйлерова цикла }
@@ -148,10 +149,9 @@ std::vector<int> hierholzer(const AdjacencyGraph& g, int start) {
     }
     ////////// end while
 
-    // We were popping, so the cycle is currently start <- ... <- start.
-    // Reverse to get the natural start -> ... -> start order.
-    std::reverse(cycle.begin(), cycle.end());
-    return cycle;
+    // We were popping, so the trail is currently reversed.
+    std::reverse(trail.begin(), trail.end());
+    return trail;
     ////////// Выход: последовательность вершин эйлерова цикла
 }
 
@@ -216,7 +216,9 @@ EulerianCycleResult EulerianCycleBuilder::compute(EulerizationMode mode) const {
     EulerianCycleResult result;
     result.success = false;
     result.wasAlreadyEulerian = false;
+    result.wasSemiEulerian = false;
     result.requiresMultigraph = false;
+    result.traversalKind = EulerTraversalKind::None;
 
     // Always work on a copy so we can add edges freely.
     result.modifiedGraph = cloneGraph(m_graph);
@@ -232,6 +234,47 @@ EulerianCycleResult EulerianCycleBuilder::compute(EulerizationMode mode) const {
         // nothing meaningful to walk.  Surface this as not-success so the
         // caller can print a sensible message.
         return result;
+    }
+
+    // Fast path: if the original graph is already connected on the edge-
+    // bearing subgraph, then we may be able to build an Euler traversal
+    // without adding any edges at all.
+    const auto originalComponents = connectedComponentsWithEdges(G);
+    if (originalComponents.size() <= 1) {
+        std::vector<int> originalOddVertices;
+        for (int v : G.vertexIds()) {
+            if (degreeOf(G, v) % 2 == 1) {
+                originalOddVertices.push_back(v);
+            }
+        }
+        std::sort(originalOddVertices.begin(), originalOddVertices.end());
+
+        if (originalOddVertices.empty()) {
+            int start = -1;
+            for (int v : G.vertexIds()) {
+                if (!G.neighbors(v).empty()) {
+                    start = v;
+                    break;
+                }
+            }
+            if (start == -1) {
+                return result;
+            }
+
+            result.traversal = hierholzer(G, start);
+            result.traversalKind = EulerTraversalKind::Cycle;
+            result.wasAlreadyEulerian = true;
+            result.success = true;
+            return result;
+        }
+
+        if (originalOddVertices.size() == 2) {
+            result.traversal = hierholzer(G, originalOddVertices.front());
+            result.traversalKind = EulerTraversalKind::Path;
+            result.wasSemiEulerian = true;
+            result.success = true;
+            return result;
+        }
     }
 
     // ---- Step 1. Make sure the edge-bearing part of the graph is connected.
@@ -310,7 +353,8 @@ EulerianCycleResult EulerianCycleBuilder::compute(EulerizationMode mode) const {
     result.wasAlreadyEulerian = result.additions.empty();
 
     // ---- Step 3. Pick a start vertex (any vertex incident to some edge)
-    // and run Hierholzer's algorithm.
+    // and run Hierholzer's algorithm.  After eulerization all degrees are
+    // even, so the traversal is guaranteed to be a cycle.
     int start = -1;
     for (int v : G.vertexIds()) {
         if (!G.neighbors(v).empty()) {
@@ -323,7 +367,8 @@ EulerianCycleResult EulerianCycleBuilder::compute(EulerizationMode mode) const {
         return result;
     }
 
-    result.cycle = hierholzer(G, start);
+    result.traversal = hierholzer(G, start);
+    result.traversalKind = EulerTraversalKind::Cycle;
     result.success = true;
     return result;
 }

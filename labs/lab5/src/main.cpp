@@ -71,7 +71,7 @@ void showMenu(bool hideLab1, bool hideLab2, bool hideLab3, bool hideLab4, bool h
     }
     if (!hideLab5) {
         std::cout << "\n  --- Lab 5 ---\n";
-        std::cout << "  24. Build Eulerian cycle (modify graph if needed)\n";
+        std::cout << "  24. Build Eulerian cycle/path (modify graph if needed)\n";
         std::cout << "  25. Show fundamental cycle system (uses MST)\n";
         std::cout << "  26. Combine cycles via symmetric difference\n";
     }
@@ -1146,14 +1146,14 @@ int main() {
             }
 
             // =========================================================
-            case 24:  // Build Eulerian cycle
+            case 24:  // Build Eulerian cycle/path
             {
                 if (!currentGraph) {
                     std::cout << "[!] Generate a graph first\n";
                     break;
                 }
                 if (currentGraph->isDirected()) {
-                    std::cout << "[!] Lab 5 (Eulerian cycle) requires an undirected graph.\n";
+                    std::cout << "[!] Lab 5 (Eulerian cycle/path) requires an undirected graph.\n";
                     break;
                 }
 
@@ -1161,7 +1161,7 @@ int main() {
                 // First attempt: try to eulerize without creating a multigraph.
                 EulerianCycleResult er = builder.compute(EulerizationMode::NonMultigraphOnly);
 
-                std::cout << "\n=== EULERIAN CYCLE ===\n";
+                std::cout << "\n=== EULERIAN TRAVERSAL ===\n";
 
                 // Handle the "needs multigraph" case: ask the user whether to
                 // proceed with parallel edges or to abort.
@@ -1193,14 +1193,20 @@ int main() {
                 }
 
                 if (!er.success) {
-                    std::cout << "[!] Cannot build Eulerian cycle (graph has no edges).\n";
+                    std::cout << "[!] Cannot build Eulerian traversal (graph has no edges).\n";
                     break;
                 }
 
-                // Report whether modifications were needed.
                 if (er.wasAlreadyEulerian) {
                     std::cout << "[OK] Graph is already Eulerian "
                                  "(connected + all degrees even).\n";
+                } else if (er.wasSemiEulerian) {
+                    std::cout << "[OK] Graph is semi-Eulerian "
+                                 "(connected + exactly two odd-degree vertices).\n";
+                    if (!er.traversal.empty()) {
+                        std::cout << "Start: v" << er.traversal.front()
+                                  << ", end: v" << er.traversal.back() << "\n";
+                    }
                 } else {
                     std::cout << "[!] Graph was NOT Eulerian. Modifications applied:\n";
                     for (size_t i = 0; i < er.additions.size(); ++i) {
@@ -1212,15 +1218,16 @@ int main() {
                     std::cout << "Total edges added: " << er.additions.size() << "\n";
                 }
 
-                // Print the cycle as a vertex sequence v0 -> v1 -> ... -> v0.
-                std::cout << "\nEulerian cycle (" << (er.cycle.size() - 1)
-                          << " edges, " << er.cycle.size() << " vertex stops):\n";
+                const bool isCycle = er.traversalKind == EulerTraversalKind::Cycle;
+                std::cout << "\nEulerian " << (isCycle ? "cycle" : "path")
+                          << " (" << (er.traversal.size() - 1)
+                          << " edges, " << er.traversal.size() << " vertex stops):\n";
                 std::cout << "  ";
-                for (size_t i = 0; i < er.cycle.size(); ++i) {
-                    std::cout << "v" << er.cycle[i];
-                    if (i + 1 < er.cycle.size()) std::cout << " -> ";
+                for (size_t i = 0; i < er.traversal.size(); ++i) {
+                    std::cout << "v" << er.traversal[i];
+                    if (i + 1 < er.traversal.size()) std::cout << " -> ";
                     // Wrap long lines for readability.
-                    if ((i + 1) % 12 == 0 && i + 1 < er.cycle.size()) {
+                    if ((i + 1) % 12 == 0 && i + 1 < er.traversal.size()) {
                         std::cout << "\n  ";
                     }
                 }
