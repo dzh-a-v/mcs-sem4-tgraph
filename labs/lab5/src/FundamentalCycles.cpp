@@ -155,8 +155,8 @@ std::vector<FundamentalCycle> FundamentalCycleSystem::compute() const {
 
         // Chord: build its fundamental cycle.
         FundamentalCycle cycle;
-        cycle.chordFrom = e.from;
-        cycle.chordTo = e.to;
+        cycle.chordFrom = key.first;
+        cycle.chordTo = key.second;
 
         // Tree path from one endpoint of the chord to the other.
         // Combined with the chord itself, this closes the cycle.
@@ -177,6 +177,12 @@ std::vector<FundamentalCycle> FundamentalCycleSystem::compute() const {
         std::sort(cycle.edges.begin(), cycle.edges.end(), edgeLess);
         cycles.push_back(std::move(cycle));
     }
+
+    std::sort(cycles.begin(), cycles.end(), [](const FundamentalCycle& lhs,
+                                               const FundamentalCycle& rhs) {
+        if (lhs.chordFrom != rhs.chordFrom) return lhs.chordFrom < rhs.chordFrom;
+        return lhs.chordTo < rhs.chordTo;
+    });
 
     return cycles;
 }
