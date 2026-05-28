@@ -276,20 +276,22 @@ Sk=\frac{q-p}{\sqrt{npq}}, \qquad
 Ex=\frac{1-6pq}{npq}.
 \]
 
-Ниже приведены три варианта представления биномиального распределения. На рис.~\ref{fig:binom-original-book} показан исходный вид распределения из справочника Р.~Н.~Вадзинского для случая \(n=4\) и нескольких значений параметра \(p\). На рис.~\ref{fig:binom-original-simulated} приведена построенная по 1000 сгенерированным значениям гистограмма для тех же исходных параметров \(n=4\), что позволяет сопоставить теоретическую форму распределения и результат имитационного моделирования. На рис.~\ref{fig:binom-program-simulated} показана гистограмма распределения, которое уже используется непосредственно в программе.
+Ниже приведены три варианта представления биномиального распределения. На рис.~\ref{fig:binom-original-book} показан исходный вид распределения из справочника Р.~Н.~Вадзинского для случая \(n=4\) и нескольких значений параметра \(p\). На рис.~\ref{fig:binom-original-simulated} приведена построенная по 1000 сгенерированным значениям гистограмма для тех же исходных параметров \(n=4\), что позволяет сопоставить теоретическую форму распределения и результат моделирования. На рис.~\ref{fig:binom-program-simulated} показана гистограмма распределения, которое уже используется непосредственно в программе.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.7\textwidth]{images/dist_original.png}
+\begin{minipage}[t]{0.45\textwidth}
+\centering
+\includegraphics[width=0.95\textwidth]{images/dist_original.png}
 \caption{Исходный вид биномиального распределения из справочника Р.~Н.~Вадзинского}
 \label{fig:binom-original-book}
-\end{figure}
-
-\begin{figure}[H]
+\end{minipage}\hfill
+\begin{minipage}[t]{0.45\textwidth}
 \centering
-\includegraphics[width=0.7\textwidth]{../report/binomial/binomial_histogram_0_4.png}
+\includegraphics[width=0.95\textwidth]{../report/binomial/binomial_histogram_0_4.png}
 \caption{Гистограмма 1000 сгенерированных значений биномиального распределения для исходных параметров \(n=4\)}
 \label{fig:binom-original-simulated}
+\end{minipage}
 \end{figure}
 
 \begin{figure}[H]
