@@ -18,6 +18,37 @@ void AdjacencyGraph::addEdge(int from, int to, double weight) {
     }
 }
 
+std::optional<double> AdjacencyGraph::removeEdge(int from, int to) {
+    auto fromIt = m_adj.find(from);
+    if (fromIt == m_adj.end()) return std::nullopt;
+
+    auto edgeIt = std::find_if(
+        fromIt->second.begin(),
+        fromIt->second.end(),
+        [to](const std::pair<int, double>& edge) { return edge.first == to; });
+    if (edgeIt == fromIt->second.end()) return std::nullopt;
+
+    const double removedWeight = edgeIt->second;
+    fromIt->second.erase(edgeIt);
+
+    if (!m_directed) {
+        auto toIt = m_adj.find(to);
+        if (toIt != m_adj.end()) {
+            auto backIt = std::find_if(
+                toIt->second.begin(),
+                toIt->second.end(),
+                [from, removedWeight](const std::pair<int, double>& edge) {
+                    return edge.first == from && edge.second == removedWeight;
+                });
+            if (backIt != toIt->second.end()) {
+                toIt->second.erase(backIt);
+            }
+        }
+    }
+
+    return removedWeight;
+}
+
 std::vector<int> AdjacencyGraph::vertexIds() const { 
     return m_vertices; 
 }

@@ -19,6 +19,7 @@ public:
     explicit AdjacencyGraph(bool directed = true);
     void addVertex(int id);
     void addEdge(int from, int to, double weight); // Checks existence FtF
+    std::optional<double> removeEdge(int from, int to);
     std::vector<int> vertexIds() const;
     std::vector<WeightedEdge> edges() const;
     std::vector<std::pair<int, double>> neighbors(int v) const;

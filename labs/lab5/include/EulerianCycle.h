@@ -5,14 +5,11 @@
 #include <vector>
 
 /// One modification step recorded while making the graph Eulerian.
-/// Two reasons we may add an edge:
-///   1. The graph (ignoring isolated vertices) was not connected -- we add a
-///      bridge between two components so a single cycle can visit everything.
-///   2. Two vertices had odd degree -- pairing them up with an extra edge
-///      makes both endpoints even, which is required for an Eulerian cycle.
+/// We may either add an edge or remove one while fixing connectivity/parity.
 struct EulerianModification {
     int from;
     int to;
+    bool added;          // true = edge added, false = edge removed
     std::string reason;  // human-readable, e.g. "connect components" / "fix odd parity"
 };
 
@@ -27,7 +24,8 @@ struct EulerianModification {
 ///                      a multigraph.
 enum class EulerizationMode {
     NonMultigraphOnly,
-    AllowMultigraph
+    AllowMultigraph,
+    DeleteEdgesOnly
 };
 
 enum class EulerTraversalKind {
@@ -39,7 +37,7 @@ enum class EulerTraversalKind {
 struct EulerianCycleResult {
     bool wasAlreadyEulerian;                       // true if the input already had an Eulerian cycle
     bool wasSemiEulerian;                         // true if the input already had an Eulerian path (but not a cycle)
-    std::vector<EulerianModification> additions;   // edges added, in the order they were added
+    std::vector<EulerianModification> additions;   // edge modifications, in the order they were applied
     std::vector<int> traversal;                    // vertex sequence of the Eulerian cycle/path
     std::unique_ptr<AdjacencyGraph> modifiedGraph; // graph actually used for the traversal (== input if no changes)
     bool success;                                  // false only for pathological inputs (e.g. empty graph)

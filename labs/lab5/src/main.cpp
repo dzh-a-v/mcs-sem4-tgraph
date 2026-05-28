@@ -1169,27 +1169,55 @@ int main() {
                     std::cout << "[!] Cannot make this graph Eulerian without\n"
                                  "    duplicating an existing edge -- the only\n"
                                  "    possible eulerization turns it into a\n"
-                                 "    multigraph.\n";
-                    std::cout << "Modify the graph into a multigraph anyway to\n"
-                                 "obtain an Eulerian cycle? [y/n]: ";
-                    std::string answer;
-                    //std::getline(std::cin, answer);
-                    // Accept "y" / "Y" / "yes" / "Yes" / etc.
-                    std::cin >> answer;
-                    bool accept = answer[0] == 'y';
-                    if (!accept) {
-                        std::cout << "[i] Aborted -- no Eulerian cycle was built.\n";
-                        break;
+                                 "    multigraph unless we remove some edges.\n";
+
+                    while (!er.success) {
+                        std::cout << "Choose how to continue:\n";
+                        std::cout << "  d - try deleting existing edges\n";
+                        std::cout << "  m - allow multigraph conversion\n";
+                        std::cout << "  n - abort\n";
+                        std::cout << "> ";
+
+                        std::string answer;
+                        std::cin >> answer;
+                        if (answer.empty()) continue;
+
+                        const char choice = static_cast<char>(std::tolower(
+                            static_cast<unsigned char>(answer[0])));
+
+                        if (choice == 'n') {
+                            std::cout << "[i] Aborted -- no Eulerian cycle was built.\n";
+                            break;
+                        }
+
+                        if (choice == 'd') {
+                            er = builder.compute(EulerizationMode::DeleteEdgesOnly);
+                            if (er.success) {
+                                std::cout << "[i] Proceeding with edge-deletion eulerization.\n";
+                            } else {
+                                std::cout << "[!] Could not make the graph Eulerian by deleting\n"
+                                             "    edges without breaking the edge-bearing connectivity.\n";
+                            }
+                            continue;
+                        }
+
+                        if (choice == 'm') {
+                            er = builder.compute(EulerizationMode::AllowMultigraph);
+                            if (!er.success) {
+                                std::cout << "[!] Unexpected failure while building\n"
+                                             "    the Eulerian cycle.\n";
+                                break;
+                            }
+                            std::cout << "[i] Proceeding with multigraph eulerization.\n";
+                            continue;
+                        }
+
+                        std::cout << "Invalid option. Choose d, m, or n.\n";
                     }
 
-                    // Re-run with multigraph allowed.
-                    er = builder.compute(EulerizationMode::AllowMultigraph);
                     if (!er.success) {
-                        std::cout << "[!] Unexpected failure while building\n"
-                                     "    the Eulerian cycle.\n";
                         break;
                     }
-                    std::cout << "[i] Proceeding with multigraph eulerization.\n";
                 }
 
                 if (!er.success) {
@@ -1211,11 +1239,13 @@ int main() {
                     std::cout << "[!] Graph was NOT Eulerian. Modifications applied:\n";
                     for (size_t i = 0; i < er.additions.size(); ++i) {
                         const auto& a = er.additions[i];
-                        std::cout << "  " << (i + 1) << ". added edge v" << a.from
+                        std::cout << "  " << (i + 1) << ". "
+                                  << (a.added ? "added edge v" : "removed edge v")
+                                  << a.from
                                   << " --- v" << a.to
                                   << "  [" << a.reason << "]\n";
                     }
-                    std::cout << "Total edges added: " << er.additions.size() << "\n";
+                    std::cout << "Total modifications: " << er.additions.size() << "\n";
                 }
 
                 const bool isCycle = er.traversalKind == EulerTraversalKind::Cycle;

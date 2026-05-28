@@ -210,6 +210,59 @@ bool findNonMultigraphMatching(const std::vector<int>& oddVertices,
     return recurse();
 }
 
+bool canRemoveEdgeWithoutDisconnecting(const AdjacencyGraph& g, int u, int v) {
+    auto copy = cloneGraph(g);
+    if (!copy->removeEdge(u, v).has_value()) {
+        return false;
+    }
+
+    if (copy->edges().empty()) {
+        return false;
+    }
+
+    return connectedComponentsWithEdges(*copy).size() <= 1;
+}
+
+bool findDeletionMatching(AdjacencyGraph& graph,
+                          const std::vector<int>& oddVertices,
+                          std::vector<std::pair<int,int>>& deletions) {
+    const size_t n = oddVertices.size();
+    std::vector<bool> used(n, false);
+
+    std::function<bool()> recurse = [&]() -> bool {
+        size_t i = 0;
+        while (i < n && used[i]) ++i;
+        if (i == n) return true;
+
+        used[i] = true;
+        for (size_t j = i + 1; j < n; ++j) {
+            if (used[j]) continue;
+
+            const int u = oddVertices[i];
+            const int v = oddVertices[j];
+            if (!graph.getEdgeWeight(u, v).has_value()) continue;
+            if (!canRemoveEdgeWithoutDisconnecting(graph, u, v)) continue;
+
+            const auto removedWeight = graph.removeEdge(u, v);
+            if (!removedWeight.has_value()) continue;
+
+            used[j] = true;
+            deletions.push_back({u, v});
+            if (recurse()) return true;
+
+            deletions.pop_back();
+            used[j] = false;
+            graph.addEdge(u, v, *removedWeight);
+        }
+
+        used[i] = false;
+        return false;
+    };
+
+    deletions.clear();
+    return recurse();
+}
+
 }  // namespace
 
 EulerianCycleResult EulerianCycleBuilder::compute(EulerizationMode mode) const {
@@ -293,7 +346,7 @@ EulerianCycleResult EulerianCycleBuilder::compute(EulerizationMode mode) const {
         const int u = components[0].front();
         const int v = components[1].front();
         G.addEdge(u, v, 0.0);  // weight 0: we made this edge up
-        result.additions.push_back({u, v, "connect components"});
+        result.additions.push_back({u, v, true, "connect components"});
     }
 
     // ---- Step 2. Fix odd-degree vertices by pairing.
@@ -334,6 +387,18 @@ EulerianCycleResult EulerianCycleBuilder::compute(EulerizationMode mode) const {
                 // see the bridge edges that would still be needed.
                 return result;
             }
+        } else if (mode == EulerizationMode::DeleteEdgesOnly) {
+            std::vector<std::pair<int,int>> deletions;
+            const bool foundDeletionFix = findDeletionMatching(G, oddVertices, deletions);
+            if (!foundDeletionFix) {
+                result.requiresMultigraph = true;
+                result.success = false;
+                return result;
+            }
+
+            for (const auto& [u, v] : deletions) {
+                result.additions.push_back({u, v, false, "fix odd parity by deleting edge"});
+            }
         } else {
             // AllowMultigraph: just pair adjacent odd vertices in the sorted
             // list.  This matches the original behavior and is guaranteed to
@@ -346,7 +411,7 @@ EulerianCycleResult EulerianCycleBuilder::compute(EulerizationMode mode) const {
         // Apply the chosen pairing.
         for (const auto& [u, v] : pairs) {
             G.addEdge(u, v, 0.0);
-            result.additions.push_back({u, v, "fix odd parity"});
+            result.additions.push_back({u, v, true, "fix odd parity"});
         }
     }
 
