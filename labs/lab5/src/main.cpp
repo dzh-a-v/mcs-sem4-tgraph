@@ -1346,9 +1346,36 @@ int main() {
                     }
                 }
                 std::cout << "\n";
-                std::cout << "(Note: a single cycle has each vertex appearing in exactly\n";
-                std::cout << " 2 edges; if some vertex appears in more, the result is a\n";
-                std::cout << " disjoint union of cycles -- still a valid element of the cycle space.)\n";
+
+                if (!acc.empty()) {
+                    auto cycles = FundamentalCycleSystem::decomposeIntoCycles(acc);
+                    if (cycles.empty()) {
+                        std::cout << "  Could not reconstruct simple cycles from the edge set.\n";
+                        std::cout << "  The result is still an even subgraph, but not represented\n";
+                        std::cout << "  here as a clean cycle decomposition.\n";
+                    } else if (cycles.size() == 1) {
+                        std::cout << "  Reconstructed cycle: ";
+                        for (size_t i = 0; i < cycles[0].size(); ++i) {
+                            std::cout << "v" << cycles[0][i];
+                            if (i + 1 < cycles[0].size()) std::cout << " -> ";
+                        }
+                        std::cout << "\n";
+                    } else {
+                        std::cout << "  Decomposition into cycles:\n";
+                        for (size_t i = 0; i < cycles.size(); ++i) {
+                            std::cout << "    " << (i + 1) << ". ";
+                            for (size_t j = 0; j < cycles[i].size(); ++j) {
+                                std::cout << "v" << cycles[i][j];
+                                if (j + 1 < cycles[i].size()) std::cout << " -> ";
+                            }
+                            std::cout << "\n";
+                        }
+                    }
+                }
+
+                std::cout << "(Note: after symmetric difference the result is always an\n";
+                std::cout << " even subgraph. It may be one cycle or a union of several\n";
+                std::cout << " cycles, so we reconstruct as much as the edge set allows.)\n";
                 break;
             }
 

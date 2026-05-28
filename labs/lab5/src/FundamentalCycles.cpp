@@ -1,5 +1,7 @@
 #include "include/FundamentalCycles.h"
 #include <algorithm>
+#include <functional>
+#include <map>
 #include <set>
 #include <unordered_map>
 
@@ -24,6 +26,65 @@ std::pair<int,int> normEdge(int u, int v) {
 bool edgeLess(const std::pair<int,int>& lhs, const std::pair<int,int>& rhs) {
     if (lhs.first != rhs.first) return lhs.first < rhs.first;
     return lhs.second < rhs.second;
+}
+
+bool isSimpleCycleSequence(const std::vector<int>& cycle) {
+    if (cycle.size() < 4) return false;  // at least 3 edges + closing vertex
+    if (cycle.front() != cycle.back()) return false;
+
+    std::set<int> seen;
+    for (size_t i = 0; i + 1 < cycle.size(); ++i) {
+        if (!seen.insert(cycle[i]).second) {
+            return false;
+        }
+    }
+    return true;
+}
+
+std::vector<int> findAnySimpleCycle(
+    const std::map<int, std::set<int>>& adjacency)
+{
+    std::set<int> visited;
+    std::vector<int> stack;
+    std::unordered_map<int, size_t> position;
+    std::vector<int> cycle;
+
+    std::function<bool(int, int)> dfs = [&](int u, int parent) {
+        visited.insert(u);
+        position[u] = stack.size();
+        stack.push_back(u);
+
+        auto it = adjacency.find(u);
+        if (it != adjacency.end()) {
+            for (int v : it->second) {
+                if (v == parent) continue;
+
+                if (position.count(v) > 0) {
+                    cycle.assign(stack.begin() + static_cast<std::ptrdiff_t>(position[v]),
+                                 stack.end());
+                    cycle.push_back(v);
+                    return true;
+                }
+
+                if (visited.count(v) == 0 && dfs(v, u)) {
+                    return true;
+                }
+            }
+        }
+
+        position.erase(u);
+        stack.pop_back();
+        return false;
+    };
+
+    for (const auto& [start, neighbors] : adjacency) {
+        if (neighbors.empty() || visited.count(start) > 0) continue;
+        if (dfs(start, -1)) {
+            return cycle;
+        }
+    }
+
+    return {};
 }
 
 // In a tree there is exactly one simple path between any two vertices.
@@ -144,4 +205,48 @@ std::vector<std::pair<int,int>> FundamentalCycleSystem::symmetricDifference(
     while (i < a.size()) result.push_back(a[i++]);
     while (j < b.size()) result.push_back(b[j++]);
     return result;
+}
+
+std::vector<std::vector<int>> FundamentalCycleSystem::decomposeIntoCycles(
+    const std::vector<std::pair<int,int>>& edges)
+{
+    std::map<int, std::set<int>> adjacency;
+    for (const auto& [u, v] : edges) {
+        adjacency[u].insert(v);
+        adjacency[v].insert(u);
+    }
+
+    std::vector<std::vector<int>> cycles;
+    while (true) {
+        bool hasEdges = false;
+        for (const auto& [vertex, neighbors] : adjacency) {
+            if (!neighbors.empty()) {
+                hasEdges = true;
+                break;
+            }
+        }
+        if (!hasEdges) break;
+
+        std::vector<int> cycle = findAnySimpleCycle(adjacency);
+        if (cycle.empty()) {
+            cycles.clear();
+            return cycles;
+        }
+
+        for (size_t i = 0; i + 1 < cycle.size(); ++i) {
+            const int u = cycle[i];
+            const int v = cycle[i + 1];
+            adjacency[u].erase(v);
+            adjacency[v].erase(u);
+        }
+
+        if (isSimpleCycleSequence(cycle)) {
+            cycles.push_back(std::move(cycle));
+        } else {
+            cycles.clear();
+            return cycles;
+        }
+    }
+
+    return cycles;
 }

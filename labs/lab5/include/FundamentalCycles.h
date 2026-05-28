@@ -35,6 +35,12 @@ public:
         const std::vector<std::pair<int,int>>& a,
         const std::vector<std::pair<int,int>>& b);
 
+    /// Decompose an undirected edge set from the cycle space into edge-disjoint
+    /// simple cycles.  If the set is itself one simple cycle, the result has
+    /// exactly one vertex sequence v0, v1, ..., vk = v0.
+    static std::vector<std::vector<int>> decomposeIntoCycles(
+        const std::vector<std::pair<int,int>>& edges);
+
 private:
     const AdjacencyGraph& m_graph;
     const AdjacencyGraph& m_tree;
