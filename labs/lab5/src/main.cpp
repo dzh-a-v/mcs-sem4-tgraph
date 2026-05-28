@@ -3,6 +3,7 @@
 #include <limits>
 #include <cmath>
 #include <cctype>
+#include <sstream>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -1158,14 +1159,81 @@ int main() {
                 }
 
                 EulerianCycleBuilder builder(*currentGraph);
-                // First attempt: try to eulerize without creating a multigraph.
-                EulerianCycleResult er = builder.compute(EulerizationMode::NonMultigraphOnly);
-
                 std::cout << "\n=== EULERIAN TRAVERSAL ===\n";
+                EulerianCycleResult naturalTraversal =
+                    builder.compute(EulerizationMode::NonMultigraphOnly);
+                const bool originalWasSemiEulerian =
+                    naturalTraversal.success &&
+                    naturalTraversal.wasSemiEulerian &&
+                    naturalTraversal.additions.empty();
 
-                // Handle the "needs multigraph" case: ask the user whether to
-                // proceed with parallel edges or to abort.
-                if (!er.success && er.requiresMultigraph) {
+                EulerianCycleResult er = originalWasSemiEulerian
+                    ? builder.compute(EulerizationMode::NonMultigraphOnly, true)
+                    : builder.compute(EulerizationMode::NonMultigraphOnly);
+
+                if (originalWasSemiEulerian) {
+                    if (!er.success) {
+                        std::cout << "[!] Graph is semi-Eulerian, but it could not be\n"
+                                     "    transformed into an Eulerian graph in simple-graph mode.\n";
+
+                        while (!er.success) {
+                            std::cout << "Choose how to continue:\n";
+                            std::cout << "  a - retry conversion by adding edges\n";
+                            std::cout << "  d - try deleting existing edges\n";
+                            std::cout << "  m - allow multigraph conversion\n";
+                            std::cout << "  p - leave it semi-Eulerian\n";
+                            std::cout << "> ";
+
+                            std::string answer;
+                            std::cin >> answer;
+                            if (answer.empty()) continue;
+
+                            const char choice = static_cast<char>(std::tolower(
+                                static_cast<unsigned char>(answer[0])));
+
+                            if (choice == 'a') {
+                                er = builder.compute(EulerizationMode::NonMultigraphOnly, true);
+                                if (er.success) {
+                                    std::cout << "[i] Proceeding with edge-addition eulerization.\n";
+                                } else {
+                                    std::cout << "[!] Still cannot make the graph Eulerian by adding\n"
+                                                 "    edges without duplicating an existing edge.\n";
+                                }
+                                continue;
+                            }
+
+                            if (choice == 'd') {
+                                er = builder.compute(EulerizationMode::DeleteEdgesOnly, true);
+                                if (er.success) {
+                                    std::cout << "[i] Proceeding with edge-deletion eulerization.\n";
+                                } else {
+                                    std::cout << "[!] Could not make the graph Eulerian by deleting\n"
+                                                 "    edges without breaking the edge-bearing connectivity.\n";
+                                }
+                                continue;
+                            }
+
+                            if (choice == 'm') {
+                                er = builder.compute(EulerizationMode::AllowMultigraph, true);
+                                if (!er.success) {
+                                    std::cout << "[!] Unexpected failure while building\n"
+                                                 "    the Eulerian cycle.\n";
+                                    break;
+                                }
+                                std::cout << "[i] Proceeding with multigraph eulerization.\n";
+                                continue;
+                            }
+
+                            if (choice == 'p') {
+                                er = std::move(naturalTraversal);
+                                std::cout << "[i] Leaving the graph semi-Eulerian.\n";
+                                break;
+                            }
+
+                            std::cout << "Invalid option. Choose a, d, m, or p.\n";
+                        }
+                    }
+                } else if (!er.success && er.requiresMultigraph) {
                     std::cout << "[!] Cannot make this graph Eulerian without\n"
                                  "    duplicating an existing edge -- the only\n"
                                  "    possible eulerization turns it into a\n"
@@ -1191,7 +1259,7 @@ int main() {
                         }
 
                         if (choice == 'd') {
-                            er = builder.compute(EulerizationMode::DeleteEdgesOnly);
+                            er = builder.compute(EulerizationMode::DeleteEdgesOnly, true);
                             if (er.success) {
                                 std::cout << "[i] Proceeding with edge-deletion eulerization.\n";
                             } else {
@@ -1202,7 +1270,7 @@ int main() {
                         }
 
                         if (choice == 'm') {
-                            er = builder.compute(EulerizationMode::AllowMultigraph);
+                            er = builder.compute(EulerizationMode::AllowMultigraph, true);
                             if (!er.success) {
                                 std::cout << "[!] Unexpected failure while building\n"
                                              "    the Eulerian cycle.\n";
@@ -1236,7 +1304,12 @@ int main() {
                                   << ", end: v" << er.traversal.back() << "\n";
                     }
                 } else {
-                    std::cout << "[!] Graph was NOT Eulerian. Modifications applied:\n";
+                    if (originalWasSemiEulerian) {
+                        std::cout << "[OK] Graph was semi-Eulerian and was transformed\n"
+                                     "    into an Eulerian graph.\n";
+                    } else {
+                        std::cout << "[!] Graph was NOT Eulerian. Modifications applied:\n";
+                    }
                     for (size_t i = 0; i < er.additions.size(); ++i) {
                         const auto& a = er.additions[i];
                         std::cout << "  " << (i + 1) << ". "
@@ -1331,50 +1404,70 @@ int main() {
                 std::cout << "\n--- Symmetric Difference of Cycles ---\n";
                 std::cout << "Available fundamental cycles: 1.."
                           << lastFundamentalCycles.size() << "\n";
-                std::cout << "Enter cycle numbers separated by spaces, "
-                             "end with 0 (need at least 2):\n";
+                std::cout << "Enter cycle numbers separated by spaces and press Enter.\n";
                 std::cout << "> ";
 
                 std::vector<int> picks;
+                if (std::cin.peek() == '\n') {
+                    std::cin.get();
+                }
                 while (true) {
-                    int x;
-                    if (!(std::cin >> x)) {
-                        std::cin.clear();
-                        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-                        std::cout << "Invalid token, try again: ";
-                        continue;
+                    picks.clear();
+                    std::string line;
+                    std::getline(std::cin, line);
+
+                    std::istringstream input(line);
+                    std::string token;
+                    bool badInput = false;
+
+                    while (input >> token) {
+                        int x = 0;
+                        try {
+                            size_t pos = 0;
+                            x = std::stoi(token, &pos);
+                            if (pos != token.size()) {
+                                throw std::invalid_argument("trailing characters");
+                            }
+                        } catch (const std::exception&) {
+                            std::cout << "Invalid token. Enter the cycle numbers again:\n> ";
+                            badInput = true;
+                            break;
+                        }
+
+                        if (x < 1 || x > static_cast<int>(lastFundamentalCycles.size())) {
+                            std::cout << "[!] Cycle C" << x << " does not exist. "
+                                         "Enter the cycle numbers again:\n> ";
+                            badInput = true;
+                            break;
+                        }
+                        picks.push_back(x);
                     }
-                    if (x == 0) break;
-                    if (x < 1 || x > static_cast<int>(lastFundamentalCycles.size())) {
-                        std::cout << "Out of range, ignored. Continue: ";
-                        continue;
+
+                    if (!badInput) break;
+                }
+
+                std::vector<std::pair<int,int>> acc;
+                if (picks.empty()) {
+                    std::cout << "\nResult of empty input:\n";
+                } else {
+                    // XOR the picks together left-to-right.
+                    // Since (A xor B) xor C = A xor (B xor C), order does not change
+                    // the final set, but we accumulate left to right anyway.
+                    acc = lastFundamentalCycles[picks[0] - 1].edges;
+                    for (size_t i = 1; i < picks.size(); ++i) {
+                        acc = FundamentalCycleSystem::symmetricDifference(
+                            acc, lastFundamentalCycles[picks[i] - 1].edges);
                     }
-                    picks.push_back(x);
-                }
 
-                if (picks.size() < 2) {
-                    std::cout << "[!] Need at least 2 cycles to take a symmetric difference.\n";
-                    break;
+                    std::cout << "\nResult of C" << picks[0];
+                    for (size_t i = 1; i < picks.size(); ++i) {
+                        std::cout << " XOR C" << picks[i];
+                    }
+                    std::cout << ":\n";
                 }
-
-                // XOR the picks together left-to-right.
-                // Since (A xor B) xor C = A xor (B xor C), order does not change
-                // the final set, but we accumulate left to right anyway.
-                std::vector<std::pair<int,int>> acc =
-                    lastFundamentalCycles[picks[0] - 1].edges;
-                for (size_t i = 1; i < picks.size(); ++i) {
-                    acc = FundamentalCycleSystem::symmetricDifference(
-                        acc, lastFundamentalCycles[picks[i] - 1].edges);
-                }
-
-                std::cout << "\nResult of C" << picks[0];
-                for (size_t i = 1; i < picks.size(); ++i) {
-                    std::cout << " XOR C" << picks[i];
-                }
-                std::cout << ":\n";
                 std::cout << "  Edges (" << acc.size() << "): ";
                 if (acc.empty()) {
-                    std::cout << "(empty -- the cycles cancelled out)";
+                    std::cout << "(empty set of edges)";
                 } else {
                     for (size_t j = 0; j < acc.size(); ++j) {
                         std::cout << "(v" << acc[j].first
