@@ -56,12 +56,15 @@ public:
 
     /// Check the Euler condition on the "edge-bearing" subgraph.  If the
     /// graph is already Eulerian, build a cycle.  If it is semi-Eulerian
-    /// (exactly two odd-degree vertices), build a path.  Otherwise modify the
-    /// graph if needed (logging every change), then build an Eulerian cycle.
+    /// (exactly two odd-degree vertices), build a path unless
+    /// `preferEulerization` is true.  Otherwise modify the graph if needed
+    /// (logging every change), then build an Eulerian cycle.
     ///
     /// `mode` controls whether the builder is allowed to create parallel
     /// edges.  See EulerizationMode for details.
-    EulerianCycleResult compute(EulerizationMode mode = EulerizationMode::NonMultigraphOnly) const;
+    EulerianCycleResult compute(
+        EulerizationMode mode = EulerizationMode::NonMultigraphOnly,
+        bool preferEulerization = false) const;
 
 private:
     const AdjacencyGraph& m_graph;

@@ -265,7 +265,9 @@ bool findDeletionMatching(AdjacencyGraph& graph,
 
 }  // namespace
 
-EulerianCycleResult EulerianCycleBuilder::compute(EulerizationMode mode) const {
+EulerianCycleResult EulerianCycleBuilder::compute(
+    EulerizationMode mode,
+    bool preferEulerization) const {
     EulerianCycleResult result;
     result.success = false;
     result.wasAlreadyEulerian = false;
@@ -321,7 +323,7 @@ EulerianCycleResult EulerianCycleBuilder::compute(EulerizationMode mode) const {
             return result;
         }
 
-        if (originalOddVertices.size() == 2) {
+        if (originalOddVertices.size() == 2 && !preferEulerization) {
             result.traversal = hierholzer(G, originalOddVertices.front());
             result.traversalKind = EulerTraversalKind::Path;
             result.wasSemiEulerian = true;
