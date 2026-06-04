@@ -1,4 +1,4 @@
-# Single histogram for the report (fig. binom-original-simulated): B(4, 0.6)
+# Report figure: histogram of 1000 simulated values B(4, 0.6)
 input_path <- "binomial_samples_0_4_1000.txt"
 output_path <- "binomial_histogram_0_4.png"
 

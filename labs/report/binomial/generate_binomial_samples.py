@@ -1,7 +1,7 @@
 from pathlib import Path
 import random
 
-
+# Same parameters as in the program (Generator.h): degrees/weights B(10, 0.5)
 N = 10
 P = 0.5
 SAMPLE_COUNT = 1000
@@ -28,19 +28,14 @@ def sample_binomial(n: int, p: float, rng: random.Random) -> int:
 
 def main() -> None:
     rng = random.Random(SEED)
-    samples = []
-    for _ in range(SAMPLE_COUNT):
-        value = 0
-        while value == 0:
-            value = sample_binomial(N, P, rng)
-        samples.append(value)
+    samples = [sample_binomial(N, P, rng) for _ in range(SAMPLE_COUNT)]
 
     OUTPUT_PATH.write_text(
         "\n".join(str(value) for value in samples) + "\n",
         encoding="utf-8",
     )
 
-    print(f"Saved {len(samples)} samples to {OUTPUT_PATH}")
+    print(f"Saved {len(samples)} samples to {OUTPUT_PATH} (B({N}, {P}), values 0..{N})")
 
 
 if __name__ == "__main__":
