@@ -258,27 +258,35 @@ F(x)=
 \chi_X(t)=\left(q+pe^{it}\right)^n.
 \]
 
-Основные числовые характеристики биномиального распределения в справочнике приводятся в следующем виде:
-\[
-\mathbb{E}X=np, \qquad \mathbb{D}X=npq, \qquad \sigma_X=\sqrt{npq}.
-\]
-Мода распределения определяется по формуле
-\[
-\hat{x}=
-\begin{cases}
-\lfloor (n+1)p \rfloor, & (n+1)p \text{ не целое},\\
-(n+1)p-1 \text{ и } (n+1)p, & (n+1)p \text{ целое}.
-\end{cases}
-\]
-Коэффициент вариации, асимметрия и эксцесс соответственно равны
-\[
-v_X=\sqrt{\frac{q}{np}}, \qquad
-Sk=\frac{q-p}{\sqrt{npq}}, \qquad
-Ex=\frac{1-6pq}{npq}.
-\]
+% Основные числовые характеристики биномиального распределения в справочнике приводятся в следующем виде:
+% \[
+% \mathbb{E}X=np, \qquad \mathbb{D}X=npq, \qquad \sigma_X=\sqrt{npq}.
+% \]
+% Мода распределения определяется по формуле
+% \[
+% \hat{x}=
+% \begin{cases}
+% \lfloor (n+1)p \rfloor, & (n+1)p \text{ не целое},\\
+% (n+1)p-1 \text{ и } (n+1)p, & (n+1)p \text{ целое}.
+% \end{cases}
+% \]
+% Коэффициент вариации, асимметрия и эксцесс соответственно равны
+% \[
+% v_X=\sqrt{\frac{q}{np}}, \qquad
+% Sk=\frac{q-p}{\sqrt{npq}}, \qquad
+% Ex=\frac{1-6pq}{npq}.
+% \]
 
-Ниже приведены три варианта представления биномиального распределения. На рис.~\ref{fig:binom-original-book} показан исходный вид распределения из справочника Р.~Н.~Вадзинского для случая \(n=4\) и нескольких значений параметра \(p\). На рис.~\ref{fig:binom-original-simulated} приведена построенная по 1000 сгенерированным значениям гистограмма для тех же исходных параметров \(n=4\), что позволяет сопоставить теоретическую форму распределения и результат моделирования. На рис.~\ref{fig:binom-program-simulated} показана гистограмма распределения, которое уже используется непосредственно в программе.
+Блок-схема алгоритма генерации биномиально распределённой случайной величины, приведённая в справочнике Р.~Н.~Вадзинского \cite{vodzinsky}, показана на рис.~\ref{fig:binom-block-scheme}.
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.45\textwidth]{images/block-scheme.png}
+\caption{Блок-схема алгоритма генерации биномиально распределённой случайной величины.}
+\label{fig:binom-block-scheme}
+\end{figure}
+
+Ниже приведены три варианта представления биномиального распределения. На рис.~\ref{fig:binom-original-book} показан исходный вид распределения из справочника Р.~Н.~Вадзинского для случая \(n=4\), а на рис.~\ref{fig:binom-original-simulated} приведена построенная по 1000 сгенерированным значениям гистограмма для тех же исходных параметров.
 \begin{figure}[H]
 \centering
 \begin{minipage}[t]{0.45\textwidth}
@@ -295,22 +303,15 @@ Ex=\frac{1-6pq}{npq}.
 \end{minipage}
 \end{figure}
 
+В справочнике иллюстрации построены для распределения с параметром \(n=4\), поэтому случайная величина принимает значения только от \(0\) до \(4\). В программе же параметры распределения были изменены на \(n=10\) и \(p=0.5\). Это увеличивает диапазон возможных значений до отрезка \(0 \dots 10\) и даёт математическое ожидание \(\mathbb{E}X = np = 5\). В результате при генерации графа в среднем получаются большие степени вершин, а значит и большее число рёбер, что делает графы более насыщенными и удобными для демонстрации алгоритмов и проверки их эффективности.
+
+На рис.~\ref{fig:binom-program-simulated} показана гистограмма распределения, которое уже используется непосредственно в программе.
+
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.7\textwidth]{images/binomial_histogram.png}
 \caption{Гистограмма 1000 сгенерированных значений биномиального распределения, используемого в программе}
 \label{fig:binom-program-simulated}
-\end{figure}
-
-В справочнике иллюстрации построены для распределения с параметром \(n=4\), поэтому случайная величина принимает значения только от \(0\) до \(4\). В программе же параметры распределения были изменены на \(n=10\) и \(p=0.5\). Это увеличивает диапазон возможных значений до отрезка \(0 \dots 10\) и даёт математическое ожидание \(\mathbb{E}X = np = 5\). В результате при генерации графа в среднем получаются большие степени вершин, а значит и большее число рёбер, что делает графы более насыщенными и удобными для демонстрации алгоритмов и проверки их эффективности.
-
-Блок-схема алгоритма генерации биномиально распределённой случайной величины, приведённая в справочнике Р.~Н.~Вадзинского \cite{vodzinsky}, показана на рис.~\ref{fig:binom-block-scheme}.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.45\textwidth]{images/block-scheme.png}
-\caption{Блок-схема алгоритма генерации биномиально распределённой случайной величины.}
-\label{fig:binom-block-scheme}
 \end{figure}
 
 В рамках работы биномиальное распределение используется при генерации степеней вершин, при генерации весов рёбер и при генерации параметров сети потоков. Для весов дополнительно вводится пользовательский выбор знака: только положительные значения, только отрицательные значения или смешанный режим. При этом нулевой по модулю вес исключается, чтобы каждое ребро имело ненулевой вес.
@@ -381,10 +382,12 @@ R(G)=\min_{v \in V} e(v),
 
 Число $w(f) = div(f, s)$ называется величиной потока f. Если $f(u, v) = c(u, v)$, то дуга $(u, v)$ называется насыщенной.
 
-Стоимость потока определяется выражением
-\[
-\operatorname{cost}(f)=\sum_{(u,v)\in E} f(u,v)\,w(u,v).
-\]
+% Стоимость потока определяется выражением
+% \[
+% \operatorname{cost}(f)=\sum_{(u,v)\in E} f(u,v)\,w(u,v).
+% \]
+
+Стоимость потока --- сумма произведений потоков на суммарные стоимости всех ребёр, по которым проходит поток.
 
 Задача о потоке минимальной стоимости фиксированной величины состоит в поиске допустимого потока заданного значения с минимальной суммарной стоимостью. В лабораторной работе №4 целевая величина берётся равной \(\left\lfloor \frac{2}{3}\,\text{maxFlow} \right\rfloor\).
 
@@ -437,7 +440,9 @@ m(G)=|E|-|V|+1
 \]
 для связного графа.
 
-Операцией сложения в пространстве циклов служит симметрическая разность множеств рёбер. В результате симметрической разности фундаментальных циклов можно получить как один цикл, так и объединение нескольких циклов, то есть чётный подграф, который затем раскладывается на простые циклы.
+%Операцией сложения в пространстве циклов служит симметрическая разность множеств рёбер. 
+
+В результате симметрической разности фундаментальных циклов можно получить объединение нескольких циклов, то есть чётный подграф, который затем раскладывается на простые циклы.
 
 %С точки зрения пространства подмножеств рёбер каждый цикл можно рассматривать как вектор над двоичной арифметикой: ребро входит в подмножество, если соответствующий коэффициент равен \(1\), и не входит, если коэффициент равен \(0\). При такой интерпретации сложению векторов соответствует симметрическая разность множеств рёбер. Совокупность всех симметрических разностей фундаментальных циклов содержит не только все циклы графа, но и некоторые объединения циклов.
 
@@ -686,7 +691,7 @@ for (const WeightedEdge& e : m_graph.edges()) {
 
 %\subsection{Общий вид программы}
 
-После запуска программа выводит главное текстовое меню, в котором все действия сгруппированы по лабораторным работам. Пользователь может последовательно переходить между генерацией графа, анализом его свойств, алгоритмами потоков, остовов и эйлеровых обходов. Общий вид меню показан на рис.~\ref{fig:menu-main}.
+После запуска программа выводит главное текстовое меню, в котором все действия сгруппированы по лабораторным работам. Пользователь может последовательно переходить между генерацией графа, анализом его свойств, алгоритмами потоков, остовов, эйлеровых обходов и т.д. Общий вид меню показан на рис.~\ref{fig:menu-main}.
 
 \begin{figure}[H]
     \centering
@@ -697,12 +702,21 @@ for (const WeightedEdge& e : m_graph.edges()) {
 
 \subsection{Результаты лабораторной работы №1}
 
-При выборе варианта 1 программа предлагает ввести количество вершин, выбрать, будет граф ориентированным или нет, а также указать допустимые веса: положительные, отрицательные или смешанные. Пример генерации графа показан на рис.~\ref{fig:lab1-generate}.
+При выборе варианта 1 программа предлагает ввести количество вершин, выбрать, будет граф ориентированным или нет, а также указать допустимые веса: положительные, отрицательные или смешанные. Пример генерации ориентированного и неориентированного графов показаны на рис.~\ref{fig:lab1-directed-generate} и~\ref{fig:lab1-undirected-generate}.
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.7\textwidth]{images/1.png}
-\caption{Генерация графа}
-\label{fig:lab1-generate}
+\begin{minipage}[t]{0.45\textwidth}
+\centering
+\includegraphics[width=0.7\textwidth]{images/1_directed.png}
+\caption{Генерация ориентированного графа}
+\label{fig:lab1-directed-generate}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.45\textwidth}
+\centering
+\includegraphics[width=0.7\textwidth]{images/1_undirected.png}
+\caption{Генерация ориентированного графа}
+\label{fig:lab1-undirected-generate}
+\end{minipage}
 \end{figure}
 
 После генерации пользователь может вывести матрицу смежности и списки смежности текущего графа. Пример такого вывода показан на рис.~\ref{fig:lab1-adjacency-output}.
@@ -724,7 +738,7 @@ for (const WeightedEdge& e : m_graph.edges()) {
 При выборе пункта анализа эксцентриситетов программа вычисляет расстояния по числу рёбер, затем выводит эксцентриситеты, радиус, диаметр, центр и диаметральные вершины. Пример такого анализа показан на рис.~\ref{fig:lab1-eccentricity}.
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.7\textwidth]{images/4.png}
+    \includegraphics[width=0.4\textwidth]{images/4.png}
     \caption{Вычисление эксцентриситетов, радиуса, диаметра и центра графа.}
     \label{fig:lab1-eccentricity}
 \end{figure}
@@ -732,7 +746,7 @@ for (const WeightedEdge& e : m_graph.edges()) {
 Для метода Шимбелла программа предлагает задать число рёбер в искомом пути, после чего строит матрицы минимальных и максимальных весов маршрутов фиксированной длины. Результат работы метода показан на рис.~\ref{fig:lab1-shimbell}.
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.7\textwidth]{images/5.png}
+    \includegraphics[width=0.4\textwidth]{images/5.png}
     \caption{Результат работы метода Шимбелла.}
     \label{fig:lab1-shimbell}
 \end{figure}
@@ -740,7 +754,7 @@ for (const WeightedEdge& e : m_graph.edges()) {
 При поиске маршрутов между двумя вершинами программа просит ввести начальную и конечную вершины, затем выводит все найденные простые пути и их количество. Пример результата показан на рис.~\ref{fig:lab1-paths}.
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.7\textwidth]{images/6.png}
+    \includegraphics[width=0.55\textwidth]{images/6.png}
     \caption{Поиск всех простых путей между двумя вершинами.}
     \label{fig:lab1-paths}
 \end{figure}
@@ -766,7 +780,7 @@ for (const WeightedEdge& e : m_graph.edges()) {
 После этого можно выполнить сравнение алгоритмов по количеству итераций. Программа выводит показатели для BFS и алгоритма Дейкстры на одном и том же графе. Пример такого сравнения показан на рис.~\ref{fig:lab2-compare}.
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.7\textwidth]{images/9.png}
+    \includegraphics[width=0.4\textwidth]{images/9.png}
     \caption{Сравнение алгоритмов BFS и Дейкстры.}
     \label{fig:lab2-compare}
 \end{figure}
@@ -776,7 +790,7 @@ for (const WeightedEdge& e : m_graph.edges()) {
 Для задач на потоки программа сначала строит сеть на основе текущего ориентированного графа, генерируя матрицы пропускных способностей и стоимостей. Пример построенной сети и её параметров показан на рис.~\ref{fig:lab3-network}.
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.7\textwidth]{images/10.png}
+    \includegraphics[width=0.4\textwidth]{images/10.png}
     \caption{Построение сети потоков.}
     \label{fig:lab3-network}
 \end{figure}
@@ -784,7 +798,7 @@ for (const WeightedEdge& e : m_graph.edges()) {
 После генерации сети пользователь может вывести матрицы пропускных способностей, стоимостей и текущего потока. Пример такого вывода показан на рис.~\ref{fig:lab3-matrices}.
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.7\textwidth]{images/11.png}
+    \includegraphics[width=0.4\textwidth]{images/11.png}
     \caption{Матрицы пропускных способностей, стоимостей и потока.}
     \label{fig:lab3-matrices}
 \end{figure}
@@ -854,17 +868,21 @@ for (const WeightedEdge& e : m_graph.edges()) {
     \caption{Выбор графа для запуска алгоритма паросочетания.}
     \label{fig:lab4-matching-choice}
 \end{figure}
+
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.7\textwidth]{images/19.png}
+    \begin{minipage}[t]{0.49\textwidth}
+    \centering
+    \includegraphics[width=0.99\textwidth]{images/19.png}
     \caption{Поиск паросочетания на исходном графе.}
     \label{fig:lab4-matching-graph}
-\end{figure}
-\begin{figure}[H]
+    \end{minipage}\hfill
+    \begin{minipage}[t]{0.49\textwidth}
     \centering
-    \includegraphics[width=0.7\textwidth]{images/20.png}
+    \includegraphics[width=0.99\textwidth]{images/20.png}
     \caption{Поиск паросочетания на построенном остове.}
     \label{fig:lab4-matching-tree}
+    \end{minipage}
 \end{figure}
 
 \subsection{Результаты лабораторной работы №5}
@@ -872,7 +890,7 @@ for (const WeightedEdge& e : m_graph.edges()) {
 При проверке эйлеровости программа анализирует граф и сообщает, является ли он эйлеровым или требует модификации. Пример начального результата показан на рис.~\ref{fig:lab5-euler-check}.
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.7\textwidth]{images/21.png}
+    \includegraphics[width=0.4\textwidth]{images/21.png}
     \caption{Проверка графа на эйлеровость.}
     \label{fig:lab5-euler-check}
 \end{figure}
@@ -880,7 +898,7 @@ for (const WeightedEdge& e : m_graph.edges()) {
 Если граф не является эйлеровым, программа выполняет его модификацию и журналирует внесённые изменения. Пример такого этапа показан на рис.~\ref{fig:lab5-eulerize}.
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.7\textwidth]{images/22.png}
+    \includegraphics[width=0.4\textwidth]{images/22.png}
     \caption{Модификация графа при эйлеризации.}
     \label{fig:lab5-eulerize}
 \end{figure}
@@ -891,13 +909,13 @@ for (const WeightedEdge& e : m_graph.edges()) {
 \begin{minipage}[t]{0.45\textwidth}
 \centering
 \includegraphics[width=\textwidth]{images/23_original.png}
-\caption{Исходный граф перед анализом цикловой структуры}
+\caption{Пункт 23 для исходного графа}
 \label{fig:lab5-original}
 \end{minipage}\hfill
 \begin{minipage}[t]{0.45\textwidth}
 \centering
 \includegraphics[width=\textwidth]{images/23_spanning_tree.png}
-\caption{Построенный остов для анализа цикловой структуры}
+\caption{Пункт 23 для построенного остова}
 \label{fig:lab5-tree}
 \end{minipage}
 \end{figure}
@@ -913,7 +931,7 @@ for (const WeightedEdge& e : m_graph.edges()) {
 После выбора нескольких фундаментальных циклов программа выполняет их симметрическую разность и восстанавливает полученные циклы из итогового множества рёбер. Пример результата показан на рис.~\ref{fig:lab5-symmetric-diff}.
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.7\textwidth]{images/25.png}
+    \includegraphics[width=0.6\textwidth]{images/25.png}
     \caption{Симметрическая разность выбранных фундаментальных циклов.}
     \label{fig:lab5-symmetric-diff}
 \end{figure}

@@ -326,7 +326,7 @@ EulerianCycleResult EulerianCycleBuilder::compute(
         }
 
         for (const auto& [u, v] : pairs) {
-            G.addEdge(u, v, 1.0);  // ? ДОБАВЛЕНИЕ ребра (чётность)
+            G.addEdge(u, v, 1.0);  // ? добавление ребра (чётность)
             result.additions.push_back({u, v, true, "fix odd parity"});
         }
     }

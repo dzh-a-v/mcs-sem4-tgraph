@@ -214,9 +214,11 @@ static std::unique_ptr<AdjacencyGraph> tryBuildGraph(
         // This allows flexibility to reach targetEdges
         if (uBlocked && vBlocked) continue;
 
-        // Generate a non-zero weight using the same binomial base.
-        int baseWeight = builder.sampleBinomial(BINOMIAL_N_WEIGHT, BINOMIAL_P_WEIGHT);
-        double weight = makeNonZeroWeight(baseWeight, weightSign, rng);
+        int baseWeight = 0;
+        while (baseWeight == 0) {
+            baseWeight = builder.sampleBinomial(BINOMIAL_N_WEIGHT, BINOMIAL_P_WEIGHT);
+        }
+        double weight = applyWeightSign(baseWeight, weightSign, rng);
 
         graph->addEdge(u, v, weight);
         addedEdges.insert({u, v});
