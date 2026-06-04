@@ -1450,9 +1450,12 @@ int main() {
                 if (picks.empty()) {
                     std::cout << "\nResult of empty input:\n";
                 } else {
+                    // Apply symmetric difference left-to-right.
+                    // Since this operation is associative, the final edge set
+                    // does not depend on how the expression is parenthesized.
                     acc = lastFundamentalCycles[picks[0] - 1].edges;
                     for (size_t i = 1; i < picks.size(); ++i) {
-                        acc = FundamentalCycleSystem::symmetricDifference(  // ? XOR циклов
+                        acc = FundamentalCycleSystem::symmetricDifference(
                             acc, lastFundamentalCycles[picks[i] - 1].edges);
                     }
 
@@ -1475,7 +1478,7 @@ int main() {
                 std::cout << "\n";
 
                 if (!acc.empty()) {
-                    auto cycles = FundamentalCycleSystem::decomposeIntoCycles(acc);  // ? разложить XOR на циклы
+                    auto cycles = FundamentalCycleSystem::decomposeIntoCycles(acc);
                     if (cycles.empty()) {
                         std::cout << "  Could not reconstruct simple cycles from the edge set.\n";
                         std::cout << "  The result is still an even subgraph, but not represented\n";
