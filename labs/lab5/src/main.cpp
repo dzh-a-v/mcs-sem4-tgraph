@@ -1161,14 +1161,14 @@ int main() {
                 EulerianCycleBuilder builder(*currentGraph);
                 std::cout << "\n=== EULERIAN TRAVERSAL ===\n";
                 EulerianCycleResult naturalTraversal =
-                    builder.compute(EulerizationMode::NonMultigraphOnly);
+                    builder.compute(EulerizationMode::NonMultigraphOnly);  // ? пробный обход
                 const bool originalWasSemiEulerian =
                     naturalTraversal.success &&
                     naturalTraversal.wasSemiEulerian &&
                     naturalTraversal.additions.empty();
 
                 EulerianCycleResult er = originalWasSemiEulerian
-                    ? builder.compute(EulerizationMode::NonMultigraphOnly, true)
+                    ? builder.compute(EulerizationMode::NonMultigraphOnly, true)  // ? сначала пытаемся в цикл
                     : builder.compute(EulerizationMode::NonMultigraphOnly);
 
                 if (originalWasSemiEulerian) {
@@ -1225,7 +1225,7 @@ int main() {
                             }
 
                             if (choice == 'p') {
-                                er = std::move(naturalTraversal);
+                                er = std::move(naturalTraversal);  // ? цепь с нечётной, без эйлеризации
                                 std::cout << "[i] Leaving the graph semi-Eulerian.\n";
                                 break;
                             }
@@ -1350,7 +1350,7 @@ int main() {
                     break;
                 }
                 if (!currentSpanningTree) {
-                    std::cout << "[!] Build the spanning tree first (option 19)\n";
+                    std::cout << "[!] Build the spanning tree first (option 19)\n";  // ? остов — Краскал, лаб.4
                     break;
                 }
 
@@ -1450,12 +1450,9 @@ int main() {
                 if (picks.empty()) {
                     std::cout << "\nResult of empty input:\n";
                 } else {
-                    // Apply symmetric difference left-to-right.
-                    // Since this operation is associative, the final edge set
-                    // does not depend on how the expression is parenthesized.
                     acc = lastFundamentalCycles[picks[0] - 1].edges;
                     for (size_t i = 1; i < picks.size(); ++i) {
-                        acc = FundamentalCycleSystem::symmetricDifference(
+                        acc = FundamentalCycleSystem::symmetricDifference(  // ? XOR циклов
                             acc, lastFundamentalCycles[picks[i] - 1].edges);
                     }
 
@@ -1478,7 +1475,7 @@ int main() {
                 std::cout << "\n";
 
                 if (!acc.empty()) {
-                    auto cycles = FundamentalCycleSystem::decomposeIntoCycles(acc);
+                    auto cycles = FundamentalCycleSystem::decomposeIntoCycles(acc);  // ? разложить XOR на циклы
                     if (cycles.empty()) {
                         std::cout << "  Could not reconstruct simple cycles from the edge set.\n";
                         std::cout << "  The result is still an even subgraph, but not represented\n";

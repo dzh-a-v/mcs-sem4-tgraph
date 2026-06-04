@@ -150,17 +150,17 @@ std::vector<FundamentalCycle> FundamentalCycleSystem::compute() const {
     for (const WeightedEdge& e : m_graph.edges()) {
         const auto key = normEdge(e.from, e.to);
         if (treeEdgeSet.count(key) > 0) {
-            continue;  // tree edge -- skip
+            continue;  // ? ребро остова — не хорда
         }
 
-        // Chord: build its fundamental cycle.
+        // ? хорда → один фундаментальный цикл
         FundamentalCycle cycle;
         cycle.chordFrom = key.first;
         cycle.chordTo = key.second;
 
         // Tree path from one endpoint of the chord to the other.
         // Combined with the chord itself, this closes the cycle.
-        std::vector<int> path = findTreePath(m_tree, e.from, e.to);
+        std::vector<int> path = findTreePath(m_tree, e.from, e.to);  // ? путь в остове между концами хорды
         if (path.empty()) continue;  // disconnected tree -- no cycle possible
 
         // Vertex sequence for display: tree path + close back to start.
@@ -171,9 +171,9 @@ std::vector<FundamentalCycle> FundamentalCycleSystem::compute() const {
         for (size_t i = 0; i + 1 < path.size(); ++i) {
             cycle.edges.push_back(normEdge(path[i], path[i + 1]));
         }
-        cycle.edges.push_back(key);  // the chord
+        cycle.edges.push_back(key);  // ? + сама хорда замыкает цикл
 
-        // Sort for deterministic display and to make symmetric difference easier.
+        // ? сортировка рёбер — для merge в symmetricDifference
         std::sort(cycle.edges.begin(), cycle.edges.end(), edgeLess);
         cycles.push_back(std::move(cycle));
     }
@@ -199,7 +199,7 @@ std::vector<std::pair<int,int>> FundamentalCycleSystem::symmetricDifference(
     size_t j = 0;
     while (i < a.size() && j < b.size()) {
         if (a[i] == b[j]) {
-            // present in both -> drop
+            // ? в обоих циклах — выкидываем (XOR)
             ++i;
             ++j;
         } else if (a[i] < b[j]) {
@@ -213,6 +213,7 @@ std::vector<std::pair<int,int>> FundamentalCycleSystem::symmetricDifference(
     return result;
 }
 
+// ? XOR может дать несколько циклов — пытаемся разложить на простые
 std::vector<std::vector<int>> FundamentalCycleSystem::decomposeIntoCycles(
     const std::vector<std::pair<int,int>>& edges)
 {
