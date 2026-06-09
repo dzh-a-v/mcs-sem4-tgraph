@@ -487,11 +487,14 @@ m(G)=|E|-|V|+1
 {генерирует случайное число по биномиальному распределению.}
 {lst:lab1-sample-binomial}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{sampleBinomial(n, p)}},label={lst:lab1-sample-binomial}]
-double u = dist(m_rng);
-double cumulative = 0.0;
-for (int k = 0; k <= n; ++k) {
-    cumulative += std::exp(logCombination(n, k) + k * std::log(p) + (n - k) * std::log(1.0 - p));
-    if (u <= cumulative) return k;
+double q = 1.0 - p;
+double ratio = p / q;
+double probability = std::pow(q, n);
+std::uniform_real_distribution<double> uniform(0.0, 1.0);
+double randomVal = uniform(m_rng);
+int x = 0;
+while (true) {
+    randomVal -= probability;
 ...
 \end{lstlisting}
 
@@ -502,11 +505,20 @@ for (int k = 0; k <= n; ++k) {
 {строит граф с заданным числом вершин и режимом генерации весов.}
 {lst:lab1-generate-acyclic-graph}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{generateAcyclicGraph(vertices, directed, weightSign)}},label={lst:lab1-generate-acyclic-graph}]
-auto graph = std::make_unique<AdjacencyGraph>(directed);
-for (int i = 1; i <= vertexCount; ++i) {
-    graph->addVertex(i);
-}
-for (const auto& [u, v] : selectedEdges) graph->addEdge(u, v, generateWeight(weightSign));
+const int maxRegenerations = 50;
+for (int attempt = 1; attempt <= maxRegenerations; ++attempt) {
+    std::vector<int> degreeTargets(vertexCount);
+    int totalDegree = 0;
+    for (int i = 0; i < vertexCount; ++i) {
+        degreeTargets[i] = std::min(
+            sampleBinomial(BINOMIAL_N_DEGREE, BINOMIAL_P_DEGREE),
+            vertexCount - 1
+        );
+        totalDegree += degreeTargets[i];
+    }
+    ...
+    auto graph = tryBuildGraph(vertexCount, directed, weightSign,
+                               degreeTargets, m_rng, *this);
 ...
 \end{lstlisting}
 
@@ -520,8 +532,12 @@ for (const auto& [u, v] : selectedEdges) graph->addEdge(u, v, generateWeight(wei
 {lst:lab1-analyze}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{analyze()}},label={lst:lab1-analyze}]
 EccentricityData result;
+result.radius = -1;
+result.diameter = -1;
 auto vertices = m_graph.vertexIds();
-if (vertices.empty()) return result;
+if (vertices.empty()) {
+    return result;
+}
 auto edgeCounts = computeEdgeCountPaths();
 for (int v : vertices) {
 ...
@@ -545,32 +561,34 @@ for (int step = 2; step <= edgeCount; ++step) {
 %\subsection{Лабораторная работа №2. Обход в ширину и кратчайшие пути}
 \subsection{Лабораторная работа №2}
 
-Во второй лабораторной работе обход в ширину реализован в классе \code{BreadthFirstSearch}. Он использует очередь, множество посещённых вершин и массив расстояний от стартовой вершины. Дополнительно сохраняется статистика по числу итераций.
+Во второй лабораторной работе обход в ширину реализован в классе \code{BreadthFirstSearch}. Он использует очередь, массив посещённых вершин и группировку вершин по уровням. Дополнительно сохраняется статистика по числу итераций.
 
 \funcblock
-{run(start)}
+{traverseWithLevels(startVertex)}
 {стартовая вершина и граф.}
-{структура \code{BfsResult}, содержащая порядок обхода, расстояния и число итераций.}
+{структура \code{BFSResult}, содержащая порядок обхода, уровни, максимальную глубину и число итераций.}
 {выполняет поиск в ширину от выбранной вершины.}
 {lst:lab2-bfs-run}
-\begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{run(start)}},label={lst:lab2-bfs-run}]
-BfsResult result;
-std::queue<int> q;
-std::unordered_set<int> used;
-q.push(start);
-used.insert(start);
+\begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{traverseWithLevels(startVertex)}},label={lst:lab2-bfs-run}]
+BFSResult result;
+result.iterations = 0;
+result.maxLevel = 0;
+std::vector<int> vertexIds = m_graph.vertexIds();
+std::vector<bool> visited(m_graph.size(), false);
+std::queue<std::pair<int, int>> queue;
+queue.push({startVertex, 0});
 ...
 \end{lstlisting}
 
-Для кратчайших путей используется класс \code{DijkstraShortestPath}. После завершения работы алгоритма путь восстанавливается по массиву предков, а статистика по релаксациям используется для сравнения с BFS.
+Для кратчайших путей используется класс \code{DijkstraAlgorithm}. После завершения работы алгоритма путь восстанавливается по массиву предков, а статистика по итерациям используется для сравнения с BFS.
 
 \funcblock
-{compute(start, finish)}
+{findShortestPaths(startVertex, targetVertex)}
 {начальная и конечная вершины, граф.}
-{структура \code{ShortestPathResult}, содержащая длину кратчайшего пути, сам путь и статистику релаксаций.}
+{структура \code{DijkstraResult}, содержащая длину кратчайшего пути, сам путь и статистику итераций.}
 {находит кратчайший путь между двумя вершинами алгоритмом Дейкстры.}
 {lst:lab2-dijkstra-compute}
-\begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{compute(start, finish)}},label={lst:lab2-dijkstra-compute}]
+\begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{findShortestPaths(startVertex, targetVertex)}},label={lst:lab2-dijkstra-compute}]
 // for u from 1 to p do -- find vertex with minimum T
 for (int u = 0; u < p; ++u) {
     result.iterations++;  // Count: finding minimum
@@ -590,16 +608,18 @@ for (int u = 0; u < p; ++u) {
 Построение сети потоков реализовано в классе \code{FlowNetworkBuilder}. На основе текущего ориентированного графа он генерирует матрицы пропускных способностей и стоимостей, а затем создаёт объект \code{FlowNetwork}. Максимальный поток вычисляется классом \code{MaxFlowSolver}, а поток минимальной стоимости --- классом \code{MinCostFlowSolver}.
 
 \funcblock
-{build()}
-{ориентированный граф, сохранённый в объекте \code{FlowNetworkBuilder}.}
+{buildFromGraph(graph)}
+{ориентированный граф, переданный в объект \code{FlowNetworkBuilder}.}
 {объект \code{FlowNetwork}, содержащий матрицы пропускных способностей, стоимостей и начальный нулевой поток.}
 {строит сеть потоков по текущему ориентированному графу.}
 {lst:lab3-build-network}
-\begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{build()}},label={lst:lab3-build-network}]
-FlowNetwork network(m_graph.vertexIds());
-for (const auto& edge : m_graph.edges()) {
-    network.setCapacity(edge.from, edge.to, generateCapacity());
-    network.setCost(edge.from, edge.to, generateCost());
+\begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{buildFromGraph(graph)}},label={lst:lab3-build-network}]
+auto network = std::make_unique<FlowNetwork>(true);
+for (int vertexId : graph.vertexIds()) {
+    network->addVertex(vertexId);
+}
+for (const WeightedEdge& edge : graph.edges()) {
+    network->addEdge(edge.from, edge.to, generateRandomCapacity(), generateRandomCost());
 }
 ...
 \end{lstlisting}
@@ -607,15 +627,18 @@ for (const auto& edge : m_graph.edges()) {
 \funcblock
 {compute(source, sink)}
 {сеть потоков, исток и сток.}
-{структура \code{MaxFlowResult}, содержащая значение максимального потока, финальную матрицу потока и журнал увеличений.}
+{структура \code{MaxFlowResult}, содержащая значение максимального потока и журнал увеличений.}
 {находит максимальный поток.}
 {lst:lab3-max-flow-compute}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{compute(source, sink)}},label={lst:lab3-max-flow-compute}]
-MaxFlowResult result;
-while (true) {
-    auto path = findAugmentingPath(source, sink);
-    if (path.empty()) break;
-    augment(path);
+MaxFlowResult result{0, {}};
+m_network.resetFlows();
+std::unordered_map<int, ResidualArc> parent;
+while (bfs(source, sink, parent)) {
+    std::vector<ResidualArc> residualPath = reconstructResidualPath(source, sink, parent);
+    if (residualPath.empty()) {
+        break;
+    }
 ...
 \end{lstlisting}
 
@@ -625,16 +648,18 @@ while (true) {
 Для четвёртой лабораторной работы используются несколько независимых модулей. Класс \code{KirchhoffCounter} строит матрицу Лапласа и вычисляет число остовных деревьев по определителю минора. Класс \code{KruskalMST} строит минимальный остов с помощью системы непересекающихся множеств. Класс \code{PruferEncoder} кодирует и декодирует дерево, а модули \code{GreedyMaximalMatching} и \code{EdmondsMatching} находят паросочетания.
 
 \funcblock
-{countSpanningTrees()}
+{compute()}
 {неориентированный граф, закреплённый за объектом \code{KirchhoffCounter}.}
-{целое число, равное количеству остовных деревьев графа.}
+{структура \code{KirchhoffResult}, содержащая матрицу Кирхгофа и число остовных деревьев графа.}
 {вычисляет число остовных деревьев по теореме Кирхгофа.}
 {lst:lab4-count-spanning-trees}
-\begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{countSpanningTrees()}},label={lst:lab4-count-spanning-trees}]
-auto laplacian = buildLaplacian();
-laplacian.pop_back();
-for (auto& row : laplacian) {
-    row.pop_back();
+\begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{compute()}},label={lst:lab4-count-spanning-trees}]
+KirchhoffResult result;
+result.kirchhoffMatrix = buildKirchhoffMatrix();
+const int n = m_graph.size();
+if (n == 0) {
+    result.spanningTreeCount = 0;
+    return result;
 }
 ...
 \end{lstlisting}
@@ -649,6 +674,7 @@ for (auto& row : laplacian) {
 KruskalResult result;
 result.totalWeight = 0.0;
 result.wasConnected = true;
+const int n = m_graph.size();
 result.spanningTree = std::make_unique<AdjacencyGraph>(m_graph.isDirected());
 for (int v : m_graph.vertexIds()) {
 ...
@@ -664,9 +690,13 @@ for (int v : m_graph.vertexIds()) {
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{compute(mode)}},label={lst:lab5-euler-compute}]
 EulerianCycleResult result;
 result.success = false;
+result.wasAlreadyEulerian = false;
+result.wasSemiEulerian = false;
+result.requiresMultigraph = false;
+result.traversalKind = EulerTraversalKind::None;
 result.modifiedGraph = cloneGraph(m_graph);
 AdjacencyGraph& G = *result.modifiedGraph;
-if (G.isDirected() || G.edges().empty()) {
+if (G.isDirected()) {
 ...
 \end{lstlisting}
 
@@ -675,6 +705,8 @@ if (G.isDirected() || G.edges().empty()) {
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{compute()}},label={lst:lab5-fundamental-compute}]
 std::vector<FundamentalCycle> cycles;
 const auto treeEdgeSet = collectTreeEdges(m_tree);
+// Walk every graph edge.  If it is NOT in the tree, it is a chord, and
+// it defines exactly one fundamental cycle.
 for (const WeightedEdge& e : m_graph.edges()) {
     const auto key = normEdge(e.from, e.to);
     if (treeEdgeSet.count(key) > 0) {
