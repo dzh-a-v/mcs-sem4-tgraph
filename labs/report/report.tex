@@ -571,7 +571,7 @@ used.insert(start);
 ...
 \end{lstlisting}
 
-Для кратчайших путей используется класс \code{DijkstraShortestPath}. Он хранит расстояния, предшественников и приоритетную очередь. После завершения работы алгоритма путь восстанавливается по массиву предков, а статистика по релаксациям используется для сравнения с BFS.
+Для кратчайших путей используется класс \code{DijkstraShortestPath}. После завершения работы алгоритма путь восстанавливается по массиву предков, а статистика по релаксациям используется для сравнения с BFS.
 
 \funcblock
 {compute(start, finish)}
@@ -580,12 +580,17 @@ used.insert(start);
 {находит кратчайший путь между двумя вершинами алгоритмом Дейкстры.}
 {lst:lab2-dijkstra-compute}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{compute(start, finish)}},label={lst:lab2-dijkstra-compute}]
-std::priority_queue<State, std::vector<State>, std::greater<State>> pq;
-distances[start] = 0.0;
-pq.push({0.0, start});
-while (!pq.empty()) {
-    auto [dist, v] = pq.top();
-...
+// for u from 1 to p do -- find vertex with minimum T
+for (int u = 0; u < p; ++u) {
+    result.iterations++;  // Count: finding minimum
+
+    // if X[u] = 0 & T[u] < m then
+    if (X[u] == 0 && T[u] < m) {
+        vIndex = u;
+        m = T[u];
+        v = vertexIds[u];
+    }
+}
 \end{lstlisting}
 
 %\subsection{Лабораторная работа №3. Сеть и потоки}
@@ -1024,8 +1029,8 @@ for (const WeightedEdge& e : m_graph.edges()) {
 \subsection{Недостатки программы}
 
 \begin{itemize}
-    \item консольный формат делает работу с большими графами и матрицами менее удобной;
-    \item не все использованные алгоритмы являются наиболее оптимальными;
+    \item При создании кода Прюфера хранится последняя удалённая вершина, чего можно не делать, т.к две оставшиеся вершины можно восстановить по индексам; если не хранить её, можно экономить память и ускорить кодирование;
+    \item классический алгоритм Дейкстры со сложностью ($O(V^2)$) можно заменить на реализацию Дейкстры с бинарной кучей ($O((V+E)\log{V})$). 
     \item используются готовые типы данных, такие как \code{vector}; созданием своих типов данных с узким функционалом можно повысить производительность;
 \end{itemize}
 
