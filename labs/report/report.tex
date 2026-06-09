@@ -513,6 +513,7 @@ m(G)=|E|-|V|+1
 {генерирует случайное число по биномиальному распределению.}
 {lst:lab1-sample-binomial}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{sampleBinomial(n, p)}},label={lst:lab1-sample-binomial}]
+int AcyclicGraphBuilder::sampleBinomial(int n, double p) {
 double q = 1.0 - p;
 double ratio = p / q;
 double probability = std::pow(q, n);
@@ -531,6 +532,11 @@ while (true) {
 {строит граф с заданным числом вершин и режимом генерации весов.}
 {lst:lab1-generate-acyclic-graph}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{generateAcyclicGraph(vertices, directed, weightSign)}},label={lst:lab1-generate-acyclic-graph}]
+std::unique_ptr<AdjacencyGraph> AcyclicGraphBuilder::generateAcyclicGraph(
+    int vertexCount,
+    bool directed,
+    WeightSign weightSign)
+{
 const int maxRegenerations = 50;
 for (int attempt = 1; attempt <= maxRegenerations; ++attempt) {
     std::vector<int> degreeTargets(vertexCount);
@@ -557,6 +563,7 @@ for (int attempt = 1; attempt <= maxRegenerations; ++attempt) {
 {находит основные метрические характеристики графа.}
 {lst:lab1-analyze}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{analyze()}},label={lst:lab1-analyze}]
+EccentricityData GraphAnalyzer::analyze() {
 EccentricityData result;
 result.radius = -1;
 result.diameter = -1;
@@ -576,6 +583,7 @@ for (int v : vertices) {
 {вычисляет минимальные и максимальные веса путей длины \(k\).}
 {lst:lab1-shimbell-compute}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{compute(edgeCount)}},label={lst:lab1-shimbell-compute}]
+ShimbellOutput KPathCalculator::compute(int edgeCount) {
 WeightTable baseMatrix = buildWeightMatrix();
 WeightTable minMatrix = baseMatrix;
 WeightTable maxMatrix = baseMatrix;
@@ -596,6 +604,7 @@ for (int step = 2; step <= edgeCount; ++step) {
 {выполняет поиск в ширину от выбранной вершины.}
 {lst:lab2-bfs-run}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{traverseWithLevels(startVertex)}},label={lst:lab2-bfs-run}]
+BFSResult BreadthFirstSearch::traverseWithLevels(int startVertex) {
 BFSResult result;
 result.iterations = 0;
 result.maxLevel = 0;
@@ -615,6 +624,7 @@ queue.push({startVertex, 0});
 {находит кратчайший путь между двумя вершинами алгоритмом Дейкстры.}
 {lst:lab2-dijkstra-compute}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{findShortestPaths(startVertex, targetVertex)}},label={lst:lab2-dijkstra-compute}]
+DijkstraResult DijkstraAlgorithm::findShortestPaths(int startVertex, std::optional<int> targetVertex) {
 // for u from 1 to p do -- find vertex with minimum T
 for (int u = 0; u < p; ++u) {
     result.iterations++;  // Count: finding minimum
@@ -640,6 +650,7 @@ for (int u = 0; u < p; ++u) {
 {строит сеть потоков по текущему ориентированному графу.}
 {lst:lab3-build-network}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{buildFromGraph(graph)}},label={lst:lab3-build-network}]
+std::unique_ptr<FlowNetwork> FlowNetworkBuilder::buildFromGraph(const AdjacencyGraph& graph) {
 auto network = std::make_unique<FlowNetwork>(true);
 for (int vertexId : graph.vertexIds()) {
     network->addVertex(vertexId);
@@ -657,6 +668,7 @@ for (const WeightedEdge& edge : graph.edges()) {
 {находит максимальный поток.}
 {lst:lab3-max-flow-compute}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{compute(source, sink)}},label={lst:lab3-max-flow-compute}]
+MaxFlowResult MaxFlowSolver::compute(int source, int sink) {
 MaxFlowResult result{0, {}};
 m_network.resetFlows();
 std::unordered_map<int, ResidualArc> parent;
@@ -680,6 +692,7 @@ while (bfs(source, sink, parent)) {
 {вычисляет число остовных деревьев по теореме Кирхгофа.}
 {lst:lab4-count-spanning-trees}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{compute()}},label={lst:lab4-count-spanning-trees}]
+KirchhoffResult KirchhoffCounter::compute() const {
 KirchhoffResult result;
 result.kirchhoffMatrix = buildKirchhoffMatrix();
 const int n = m_graph.size();
@@ -697,6 +710,7 @@ if (n == 0) {
 {строит минимальный остов алгоритмом Краскала.}
 {lst:lab4-build-mst}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{buildMST()}},label={lst:lab4-build-mst}]
+KruskalResult KruskalMST::buildMST() const {
 KruskalResult result;
 result.totalWeight = 0.0;
 result.wasConnected = true;
@@ -714,6 +728,9 @@ for (int v : m_graph.vertexIds()) {
 \funcblock{compute(mode)}{исходный неориентированный граф, закреплённый за объектом \code{EulerianCycleBuilder}, и режим эйлеризации, разрешающий или запрещающий мультиграф.}{структура \code{EulerianCycleResult}, содержащая сведения о необходимости модификаций, журнал добавленных рёбер, модифицированный граф и итоговый эйлеров обход.}{проверяет граф, при необходимости эйлеризует его и строит эйлеров обход.}{lst:lab5-euler-compute}
 
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{compute(mode)}},label={lst:lab5-euler-compute}]
+EulerianCycleResult EulerianCycleBuilder::compute(
+    EulerizationMode mode,
+    bool preferEulerization) const {
 EulerianCycleResult result;
 result.success = false;
 result.wasAlreadyEulerian = false;
@@ -729,6 +746,7 @@ if (G.isDirected()) {
 \funcblock{compute()}{исходный граф и остов, сохранённые в объекте \code{FundamentalCycleSystem}.}{список всех фундаментальных циклов.}{вычисляет систему фундаментальных циклов для выбранного остова.}{lst:lab5-fundamental-compute}
 
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{compute()}},label={lst:lab5-fundamental-compute}]
+std::vector<FundamentalCycle> FundamentalCycleSystem::compute() const {
 std::vector<FundamentalCycle> cycles;
 const auto treeEdgeSet = collectTreeEdges(m_tree);
 // Walk every graph edge.  If it is NOT in the tree, it is a chord, and
