@@ -335,7 +335,7 @@ R(G)=\min_{v \in V} e(v),
 
 Алгоритм вычисления эксцентриситетов имеет сложность \(O(|V|(|V|+|E|))\) (поиск в ширину выполняется для каждой вершины графа).
 
-Метод Шимбелла использует степени матрицы смежности для анализа маршрутов фиксированной длины. Для определения числа маршрутов, состоящих из \(k\) рёбер, матрицу смежности вершин возводят в \(k\)-ю степень: соответствующий элемент матрицы \(A^k\) даёт количество маршрутов длины \(k\). Для проверки ацикличности ориентированного графа используется треугольная матрица смежности, а для проверки связности --- сумма всех степеней матрицы смежности от \(1\) до \(|V|-1\). Для путей из \(k\) рёбер вычисляются минимальные и максимальные суммарные веса. Возможность построения маршрута между двумя вершинами определяется существованием соединяющей их цепи; при подсчёте маршрутов между заданными вершинами в программе перебираются все простые пути между этими концами.
+Метод Шимбелла использует степени матрицы смежности для анализа маршрутов фиксированной длины. Для определения числа маршрутов, состоящих из \(k\) рёбер, матрицу смежности вершин возводят в \(k\)-ю степень: соответствующий элемент матрицы \(A^k\) даёт количество маршрутов длины \(k\). Для проверки ацикличности ориентированного графа используется треугольная матрица смежности, а для проверки связности --- сумма всех степеней матрицы смежности от \(1\) до \(|V|-1\). Для путей из \(k\) рёбер с весами вычисляются минимальные и максимальные суммарные веса (min-plus и max-plus умножение матриц). Для ацикличного ориентированного графа возможность построения маршрута между вершинами \(u\) и \(v\) определяется условием \(\sum_{k=1}^{|V|-1}(A^k)_{u,v} > 0\), а общее число маршрутов равно этой сумме.
 
 Метод Шимбелла имеет сложность \(O(k|V|^3)\) (матрица размера \(|V|\times|V|\) перемножается для каждого числа рёбер до \(k\)).
 
@@ -575,7 +575,7 @@ while (true) {
 \funcblock
 {generateAcyclicGraph(vertices, directed, weightSign)}
 {количество вершин, признак ориентированности графа, режим генерации весов, а также внутренние параметры биномиального распределения, закреплённые в классе.}
-{указатель на сгенерированный граф, содержащий вершины, рёбра и веса.}
+{сгенерированный связный ациклический граф с вершинами, рёбрами и весами.}
 {строит граф с заданным числом вершин и режимом генерации весов.}
 {lst:lab1-generate-acyclic-graph}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{generateAcyclicGraph(vertices, directed, weightSign)}},label={lst:lab1-generate-acyclic-graph}]
@@ -601,12 +601,28 @@ for (int attempt = 1; attempt <= maxRegenerations; ++attempt) {
 ...
 \end{lstlisting}
 
-Вычисление эксцентриситетов реализовано в классе \code{GraphAnalyzer}. Для каждой вершины выполняется BFS, после чего по таблице расстояний вычисляются радиус, диаметр, центр и диаметральные вершины. Метод Шимбелла реализован в классе \code{KPathCalculator}, а поиск всех простых путей между двумя вершинами вынесен в класс \code{SimplePathFinder}.
+\funcblock
+{sampleWeight(weightSign)}
+{режим знака веса: только положительные, только отрицательные или смешанные значения.}
+{ненулевой вес ребра, сгенерированный по биномиальному закону.}
+{генерирует вес одного ребра с учётом выбранного режима знака.}
+{lst:lab1-sample-weight}
+\begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{sampleWeight(weightSign)}},label={lst:lab1-sample-weight}]
+double AcyclicGraphBuilder::sampleWeight(WeightSign weightSign) {
+int baseWeight = 0;
+while (baseWeight == 0) {
+    baseWeight = sampleBinomial(BINOMIAL_N_WEIGHT, BINOMIAL_P_WEIGHT);
+}
+return applyWeightSign(baseWeight, weightSign, m_rng);
+}
+\end{lstlisting}
+
+Вычисление эксцентриситетов реализовано в классе \code{GraphAnalyzer}. Метод Шимбелла для весовых матриц --- в классе \code{KPathCalculator}. Поиск и подсчёт маршрутов между двумя вершинами --- в классе \code{SimplePathFinder}.
 
 \funcblock
 {analyze()}
 {граф, переданный объекту при создании класса.}
-{структура \code{EccentricityData}, содержащая эксцентриситеты, радиус, диаметр, центр графа, диаметральные вершины и набор диаметральных путей.}
+{эксцентриситеты вершин, радиус, диаметр, центр и диаметральные вершины графа.}
 {находит основные метрические характеристики графа.}
 {lst:lab1-analyze}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{analyze()}},label={lst:lab1-analyze}]
@@ -626,8 +642,8 @@ for (int v : vertices) {
 \funcblock
 {compute(edgeCount)}
 {требуемое число рёбер \(k\) и граф, связанный с объектом класса.}
-{структура \code{ShimbellOutput}, содержащая матрицу минимальных весов, матрицу максимальных весов и само значение \(k\).}
-{вычисляет минимальные и максимальные веса путей длины \(k\).}
+{матрицы минимальных и максимальных весов путей длины \(k\).}
+{вычисляет минимальные и максимальные веса путей длины \(k\) методом Шимбелла.}
 {lst:lab1-shimbell-compute}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{compute(edgeCount)}},label={lst:lab1-shimbell-compute}]
 ShimbellOutput KPathCalculator::compute(int edgeCount) {
@@ -639,6 +655,38 @@ for (int step = 2; step <= edgeCount; ++step) {
 ...
 \end{lstlisting}
 
+\funcblock
+{findAllPaths(from, to)}
+{граф и две вершины.}
+{список всех найденных простых путей между заданными вершинами.}
+{находит все простые пути между двумя вершинами поиском в глубину с откатом.}
+{lst:lab1-find-all-paths}
+\begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{findAllPaths(from, to)}},label={lst:lab1-find-all-paths}]
+PathCollection SimplePathFinder::findAllPaths(int from, int to) {
+if (!m_graph.hasVertex(from) || !m_graph.hasVertex(to)) {
+    return {};
+}
+PathCollection collectedPaths;
+std::vector<int> currentPath;
+std::vector<bool> visited(m_graph.size(), false);
+dfsExplore(from, to, visited, currentPath, collectedPaths);
+return collectedPaths;
+}
+\end{lstlisting}
+
+\funcblock
+{countPaths(from, to)}
+{граф и две вершины.}
+{число найденных простых путей между заданными вершинами.}
+{определяет количество маршрутов как число путей, возвращённых методом \code{findAllPaths}.}
+{lst:lab1-count-paths}
+\begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{countPaths(from, to)}},label={lst:lab1-count-paths}]
+int SimplePathFinder::countPaths(int from, int to) {
+PathCollection paths = findAllPaths(from, to);
+return static_cast<int>(paths.size());
+}
+\end{lstlisting}
+
 %\subsection{Лабораторная работа №2. Обход в ширину и кратчайшие пути}
 \subsection{Лабораторная работа №2}
 
@@ -647,7 +695,7 @@ for (int step = 2; step <= edgeCount; ++step) {
 \funcblock
 {traverseWithLevels(startVertex)}
 {стартовая вершина и граф.}
-{структура \code{BFSResult}, содержащая порядок обхода, уровни, максимальную глубину и число итераций.}
+{порядок обхода, уровни вершин, максимальная глубина и число итераций.}
 {выполняет поиск в ширину от выбранной вершины.}
 {lst:lab2-bfs-run}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{traverseWithLevels(startVertex)}},label={lst:lab2-bfs-run}]
@@ -667,7 +715,7 @@ queue.push({startVertex, 0});
 \funcblock
 {findShortestPaths(startVertex, targetVertex)}
 {начальная и конечная вершины, граф.}
-{структура \code{DijkstraResult}, содержащая длину кратчайшего пути, сам путь и статистику итераций.}
+{длина кратчайшего пути, последовательность вершин пути и число итераций.}
 {находит кратчайший путь между двумя вершинами алгоритмом Дейкстры.}
 {lst:lab2-dijkstra-compute}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{findShortestPaths(startVertex, targetVertex)}},label={lst:lab2-dijkstra-compute}]
@@ -685,6 +733,31 @@ for (int u = 0; u < p; ++u) {
 }
 \end{lstlisting}
 
+Сравнение алгоритмов по числу итераций выполняется классом \code{AlgorithmComparator}.
+
+\funcblock
+{compare(startVertex)}
+{граф и стартовая вершина.}
+{число итераций BFS, число итераций Дейкстры и отношение их скоростей.}
+{запускает обход в ширину и алгоритм Дейкстры от одной вершины и сравнивает их по итерациям.}
+{lst:lab2-compare}
+\begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{compare(startVertex)}},label={lst:lab2-compare}]
+AlgorithmComparison AlgorithmComparator::compare(int startVertex) {
+AlgorithmComparison result;
+BreadthFirstSearch bfs(m_graph);
+BFSResult bfsResult = bfs.traverseWithLevels(startVertex);
+result.bfsIterations = bfsResult.iterations;
+DijkstraAlgorithm dijkstra(m_graph);
+DijkstraResult dijkstraResult = dijkstra.findShortestPaths(startVertex);
+result.dijkstraIterations = dijkstraResult.iterations;
+if (result.dijkstraIterations > 0) {
+    result.speedupFactor = static_cast<double>(result.dijkstraIterations) /
+                           static_cast<double>(result.bfsIterations);
+}
+return result;
+}
+\end{lstlisting}
+
 %\subsection{Лабораторная работа №3. Сеть и потоки}
 \subsection{Лабораторная работа №3}
 
@@ -693,7 +766,7 @@ for (int u = 0; u < p; ++u) {
 \funcblock
 {buildFromGraph(graph)}
 {ориентированный граф, переданный в объект \code{FlowNetworkBuilder}.}
-{объект \code{FlowNetwork}, содержащий матрицы пропускных способностей, стоимостей и начальный нулевой поток.}
+{сеть потоков с матрицами пропускных способностей, стоимостей и нулевым начальным потоком.}
 {строит сеть потоков по текущему ориентированному графу.}
 {lst:lab3-build-network}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{buildFromGraph(graph)}},label={lst:lab3-build-network}]
@@ -711,8 +784,8 @@ for (const WeightedEdge& edge : graph.edges()) {
 \funcblock
 {compute(source, sink)}
 {сеть потоков, исток и сток.}
-{структура \code{MaxFlowResult}, содержащая значение максимального потока и журнал увеличений.}
-{находит максимальный поток.}
+{значение максимального потока и журнал последовательных увеличений.}
+{находит максимальный поток алгоритмом Форда--Фалкерсона.}
 {lst:lab3-max-flow-compute}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{compute(source, sink)}},label={lst:lab3-max-flow-compute}]
 MaxFlowResult MaxFlowSolver::compute(int source, int sink) {
@@ -727,6 +800,32 @@ while (bfs(source, sink, parent)) {
 ...
 \end{lstlisting}
 
+\funcblock
+{compute(source, sink, targetFlow)}
+{сеть потоков, исток, сток и требуемая величина потока.}
+{достигнутый поток, суммарная стоимость, число итераций и признак успешного выполнения.}
+{находит поток заданной величины с минимальной стоимостью, используя кратчайшие пути в остаточной сети.}
+{lst:lab3-min-cost-compute}
+\begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{compute(source, sink, targetFlow)}},label={lst:lab3-min-cost-compute}]
+MinCostFlowResult MinCostFlowSolver::compute(int source, int sink, int targetFlow) {
+MinCostFlowResult result{targetFlow, 0, 0, false, {}};
+if (targetFlow <= 0) {
+    result.success = true;
+    return result;
+}
+m_network.resetFlows();
+std::unordered_map<int, int> distances;
+std::unordered_map<int, ResidualArc> parent;
+while (result.achievedFlow < targetFlow &&
+       dijkstra(source, sink, distances, parent)) {
+    std::vector<ResidualArc> residualPath =
+        reconstructResidualPath(source, sink, parent);
+    if (residualPath.empty()) {
+        break;
+    }
+...
+\end{lstlisting}
+
 %\subsection{Лабораторная работа №4. Остовные деревья, код Прюфера и паросочетания}
 \subsection{Лабораторная работа №4}
 
@@ -735,7 +834,7 @@ while (bfs(source, sink, parent)) {
 \funcblock
 {compute()}
 {неориентированный граф, закреплённый за объектом \code{KirchhoffCounter}.}
-{структура \code{KirchhoffResult}, содержащая матрицу Кирхгофа и число остовных деревьев графа.}
+{матрица Кирхгофа и число остовных деревьев графа.}
 {вычисляет число остовных деревьев по теореме Кирхгофа.}
 {lst:lab4-count-spanning-trees}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{compute()}},label={lst:lab4-count-spanning-trees}]
@@ -753,7 +852,7 @@ if (n == 0) {
 \funcblock
 {buildMST()}
 {взвешенный неориентированный граф.}
-{структура \code{KruskalResult}, содержащая построенный остов, список выбранных рёбер, суммарный вес и признак связности исходного графа.}
+{построенный остов, список выбранных рёбер, суммарный вес и признак связности исходного графа.}
 {строит минимальный остов алгоритмом Краскала.}
 {lst:lab4-build-mst}
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{buildMST()}},label={lst:lab4-build-mst}]
@@ -767,6 +866,142 @@ for (int v : m_graph.vertexIds()) {
 ...
 \end{lstlisting}
 
+Кодирование и декодирование остова реализованы в классе \code{PruferEncoder}.
+
+\funcblock
+{encode(tree)}
+{неориентированное дерево (остов).}
+{код Прюфера --- последовательность номеров соседей удаляемых листьев --- и соответствующие веса рёбер.}
+{кодирует дерево кодом Прюфера с сохранением весов.}
+{lst:lab4-prufer-encode}
+\begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{encode(tree)}},label={lst:lab4-prufer-encode}]
+PruferCode PruferEncoder::encode(const AdjacencyGraph& tree) {
+PruferCode result;
+const int p = tree.size();
+if (p < 2) {
+    return result;
+}
+result.code.reserve(p - 1);
+result.weights.reserve(p - 1);
+for (int i = 0; i < p - 1; ++i) {
+    const int leaf = findSmallestLeaf(aliveVertices, currentDegree);
+    if (leaf == -1) {
+        break;
+    }
+    const int neighbor = *adjacency[leaf].begin();
+    result.code.push_back(neighbor);
+    result.weights.push_back(edgeWeight.at(edgeKey(leaf, neighbor)));
+    adjacency[neighbor].erase(leaf);
+    currentDegree[neighbor] -= 1;
+    aliveVertices.erase(
+        std::find(aliveVertices.begin(), aliveVertices.end(), leaf));
+}
+return result;
+}
+\end{lstlisting}
+
+\funcblock
+{decode(pruferCode, vertexIds)}
+{код Прюфера с весами и список идентификаторов вершин.}
+{восстановленное неориентированное дерево с исходными весами рёбер.}
+{декодирует остов по коду Прюфера.}
+{lst:lab4-prufer-decode}
+\begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{decode(pruferCode, vertexIds)}},label={lst:lab4-prufer-decode}]
+std::unique_ptr<AdjacencyGraph> PruferEncoder::decode(
+    const PruferCode& pruferCode,
+    const std::vector<int>& vertexIds)
+{
+auto tree = std::make_unique<AdjacencyGraph>(false);
+for (int v : vertexIds) {
+    tree->addVertex(v);
+}
+const int p = static_cast<int>(vertexIds.size());
+if (p < 2) {
+    return tree;
+}
+const int codeLength = static_cast<int>(pruferCode.code.size());
+const int weightsLength = static_cast<int>(pruferCode.weights.size());
+const int steps = std::min({p - 1, codeLength, weightsLength});
+std::vector<int> unusedSorted = vertexIds;
+std::sort(unusedSorted.begin(), unusedSorted.end());
+for (int i = 0; i < steps; ++i) {
+    std::unordered_set<int> remainingInCode;
+    for (int j = i; j < codeLength; ++j) {
+        remainingInCode.insert(pruferCode.code[j]);
+    }
+    int chosenIdx = -1;
+    for (int idx = 0; idx < static_cast<int>(unusedSorted.size()); ++idx) {
+        if (remainingInCode.find(unusedSorted[idx]) == remainingInCode.end()) {
+            chosenIdx = idx;
+            break;
+        }
+    }
+    const int v = unusedSorted[chosenIdx];
+    tree->addEdge(v, pruferCode.code[i], pruferCode.weights[i]);
+    unusedSorted.erase(unusedSorted.begin() + chosenIdx);
+}
+return tree;
+...
+\end{lstlisting}
+
+Паросочетания находят классы \code{GreedyMaximalMatching} и \code{EdmondsMatching}.
+
+\funcblock
+{compute() (жадный алгоритм)}
+{неориентированный граф, закреплённый за объектом \code{GreedyMaximalMatching}.}
+{размер паросочетания, список выбранных рёбер и признак совершенного паросочетания.}
+{строит максимальное по включению паросочетание жадным перебором рёбер.}
+{lst:lab4-greedy-matching}
+\begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{compute()} (жадный алгоритм)},label={lst:lab4-greedy-matching}]
+MatchingResult GreedyMaximalMatching::compute() const {
+MatchingResult result;
+result.matchingSize = 0;
+result.isPerfect = false;
+std::vector<WeightedEdge> allEdges = m_graph.edges();
+std::sort(allEdges.begin(), allEdges.end(),
+    [](const WeightedEdge& a, const WeightedEdge& b) {
+        if (a.from != b.from) return a.from < b.from;
+        return a.to < b.to;
+    });
+std::unordered_set<int> matched;
+for (const WeightedEdge& edge : allEdges) {
+    if (matched.count(edge.from) == 0 && matched.count(edge.to) == 0) {
+        result.matchingEdges.push_back(edge);
+        matched.insert(edge.from);
+        matched.insert(edge.to);
+    }
+}
+result.matchingSize = static_cast<int>(result.matchingEdges.size());
+...
+\end{lstlisting}
+
+\funcblock
+{compute() (алгоритм Эдмондса)}
+{неориентированный граф, закреплённый за объектом \code{EdmondsMatching}.}
+{размер максимального паросочетания, список пар вершин и признак совершенного паросочетания.}
+{находит максимальное паросочетание алгоритмом Эдмондса.}
+{lst:lab4-edmonds-matching}
+\begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{compute()} (алгоритм Эдмондса)},label={lst:lab4-edmonds-matching}]
+MatchingResult EdmondsMatching::compute() const {
+MatchingResult result;
+result.matchingSize = 0;
+result.isPerfect = false;
+EdmondsWorker worker(m_graph);
+const std::vector<int> match = worker.run();
+const std::vector<int> vertexIds = m_graph.vertexIds();
+for (int i = 0; i < n; ++i) {
+    const int j = match[i];
+    if (j == -1 || j < i) continue;
+    const int idA = vertexIds[i];
+    const int idB = vertexIds[j];
+    auto weightOpt = m_graph.getEdgeWeight(idA, idB);
+    const double w = weightOpt.value_or(0.0);
+    result.matchingEdges.push_back({idA, idB, w});
+}
+result.matchingSize = static_cast<int>(result.matchingEdges.size());
+...
+\end{lstlisting}
+
 %\subsection{Лабораторная работа №5. Эйлеровы обходы и цикловая структура графа}
 \subsection{Лабораторная работа №5}
 
@@ -774,7 +1009,7 @@ for (int v : m_graph.vertexIds()) {
 
 Для построения фундаментальной системы циклов сначала алгоритмом Краскала формируется минимальный остов (\code{KruskalMST}), после чего класс \code{FundamentalCycleSystem} для каждой хорды находит путь в остове между её концами и замыкает фундаментальный цикл. Для получения новых циклов из выбранных фундаментальных используются методы \code{symmetricDifference} и \code{decomposeIntoCycles}.
 
-\funcblock{compute(mode)}{исходный неориентированный граф, закреплённый за объектом \code{EulerianCycleBuilder}, и режим эйлеризации, разрешающий или запрещающий мультиграф.}{структура \code{EulerianCycleResult}, содержащая сведения о необходимости модификаций, журнал добавленных рёбер, модифицированный граф и итоговый эйлеров обход.}{проверяет граф, при необходимости эйлеризует его и строит эйлеров обход.}{lst:lab5-euler-compute}
+\funcblock{compute(mode)}{исходный неориентированный граф, закреплённый за объектом \code{EulerianCycleBuilder}, и режим эйлеризации, разрешающий или запрещающий мультиграф.}{признак эйлеровости, журнал модификаций, модифицированный граф и построенный эйлеров обход.}{проверяет граф, при необходимости эйлеризует его и строит эйлеров обход.}{lst:lab5-euler-compute}
 
 \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{compute(mode)}},label={lst:lab5-euler-compute}]
 EulerianCycleResult EulerianCycleBuilder::compute(
@@ -828,24 +1063,24 @@ while (i < a.size() && j < b.size()) {
 ...
 \end{lstlisting}
 
-\funcblock{decomposeIntoCycles(edges)}{множество рёбер чётного подграфа.}{список простых циклов в виде последовательностей вершин.}{разлагает чётный подграф на попарно непересекающиеся простые циклы.}{lst:lab5-decompose-cycles}
-\begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{decomposeIntoCycles(edges)}},label={lst:lab5-decompose-cycles}]
-std::vector<std::vector<int>> FundamentalCycleSystem::decomposeIntoCycles(
-    const std::vector<std::pair<int,int>>& edges)
-{
-std::map<int, std::set<int>> adjacency;
-for (const auto& [u, v] : edges) {
-    adjacency[u].insert(v);
-    adjacency[v].insert(u);
-}
-std::vector<std::vector<int>> cycles;
-while (true) {
-    std::vector<int> cycle = findAnySimpleCycle(adjacency);
-    if (cycle.empty()) {
-        break;
-    }
-...
-\end{lstlisting}
+% \funcblock{decomposeIntoCycles(edges)}{множество рёбер чётного подграфа.}{список простых циклов в виде последовательностей вершин.}{разлагает чётный подграф на попарно непересекающиеся простые циклы.}{lst:lab5-decompose-cycles}
+% \begin{lstlisting}[style=cppcode,caption={Фрагмент функции \code{decomposeIntoCycles(edges)}},label={lst:lab5-decompose-cycles}]
+% std::vector<std::vector<int>> FundamentalCycleSystem::decomposeIntoCycles(
+%     const std::vector<std::pair<int,int>>& edges)
+% {
+% std::map<int, std::set<int>> adjacency;
+% for (const auto& [u, v] : edges) {
+%     adjacency[u].insert(v);
+%     adjacency[v].insert(u);
+% }
+% std::vector<std::vector<int>> cycles;
+% while (true) {
+%     std::vector<int> cycle = findAnySimpleCycle(adjacency);
+%     if (cycle.empty()) {
+%         break;
+%     }
+% ...
+% \end{lstlisting}
 
 \newpage
 \section{Результаты работы программы}
@@ -912,11 +1147,11 @@ while (true) {
     \label{fig:lab1-shimbell}
 \end{figure}
 
-При поиске маршрутов между двумя вершинами программа просит ввести начальную и конечную вершины, затем выводит все найденные простые пути и их количество. Пример результата показан на рис.~\ref{fig:lab1-paths}.
+При подсчёте маршрутов между двумя вершинами ацикличного ориентированного графа программа применяет метод Шимбелла: число маршрутов равно \(\sum_{k=1}^{|V|-1}(A^k)_{u,v}\). Пример результата показан на рис.~\ref{fig:lab1-paths}.
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.55\textwidth]{images/6.png}
-    \caption{Поиск всех простых путей между двумя вершинами.}
+    \caption{Подсчёт маршрутов методом Шимбелла между двумя вершинами.}
     \label{fig:lab1-paths}
 \end{figure}
 
@@ -1178,7 +1413,8 @@ while (true) {
 \begin{itemize}
     \item программа объединяет алгоритмы всех пяти лабораторных работ в одном приложении, всё реализовано с одними и теми же типами данных (одномерные и двумерные списки целых чисел);
     \item модульная структура упрощает сопровождение кода и добавление новых алгоритмов;
-    \item возможность скрыть разделы в меню.
+    \item возможность скрыть разделы в меню;
+    \item поддержка создания мультиграфа при создании Эйлерова графа.
 \end{itemize}
 
 \subsection{Недостатки программы}
