@@ -64,6 +64,14 @@
 Код представлен в листинге~\ref{#5}.%
 }
 
+\newcommand{\mainfuncblock}[4]{%
+\subsubsection*{Функция \code{#1}}
+\noindent
+\textbf{Вход:} #2\\
+\textbf{Выход:} #3\\
+\textbf{Назначение:} #4%
+}
+
 \newcommand{\appendixfile}[3]{%
 \newpage
 \section*{Приложение #1. Файл \code{#2}}
@@ -1094,6 +1102,16 @@ while (i < a.size() && j < b.size()) {
 % ...
 % \end{lstlisting}
 
+\subsection{Файл main.cpp}
+
+Точка входа в программу --- функция \code{main}. Она объединяет все лабораторные работы в одном сеансе: хранит текущий граф и связанные с ним объекты (сеть потоков, остов, код Прюфера, фундаментальные циклы) и по выбору пользователя вызывает соответствующие алгоритмы.
+
+\mainfuncblock
+{main()}
+{аргументы командной строки не используются; ввод параметров выполняется пользователем через консольное меню.}
+{\code{int} --- код завершения программы (\(0\) при успешном завершении).}
+{точка входа в программу. Инициализирует состояние сеанса, выводит главное меню и в цикле обрабатывает выбор пользователя: генерацию графа, алгоритмы лабораторных работ №1--5, а также служебные команды (скрытие разделов меню, экспорт). При выборе пункта «Выход» завершает работу.}
+
 \newpage
 \section{Результаты работы программы}
 
@@ -1472,51 +1490,51 @@ while (i < a.size() && j < b.size()) {
 % Maximum Matching in General Graphs Without Explicit Consideration of Blossoms Revisited / Norbert Blum∗ / 53 страницы
 % \newpage
 
-% \section*{Приложение}
-% \addcontentsline{toc}{section}{Приложение}
+\section*{Приложение}
+\addcontentsline{toc}{section}{Приложение}
 
-% \appendixfile{А}{AlgorithmComparator.h}{../lab5/include/AlgorithmComparator.h}
-% \appendixfile{Б}{AlgorithmComparator.cpp}{../lab5/src/AlgorithmComparator.cpp}
-% \appendixfile{В}{BFS.h}{../lab5/include/BFS.h}
-% \appendixfile{Г}{BFS.cpp}{../lab5/src/BFS.cpp}
-% \appendixfile{Д}{Dijkstra.h}{../lab5/include/Dijkstra.h}
-% \appendixfile{Е}{Dijkstra.cpp}{../lab5/src/Dijkstra.cpp}
-% \appendixfile{Ж}{Eccentricity.h}{../lab5/include/Eccentricity.h}
-% \appendixfile{З}{Eccentricity.cpp}{../lab5/src/Eccentricity.cpp}
-% \appendixfile{И}{EdmondsMatching.h}{../lab5/include/EdmondsMatching.h}
-% \appendixfile{К}{EdmondsMatching.cpp}{../lab5/src/EdmondsMatching.cpp}
-% \appendixfile{Л}{EulerianCycle.h}{../lab5/include/EulerianCycle.h}
-% \appendixfile{М}{EulerianCycle.cpp}{../lab5/src/EulerianCycle.cpp}
-% \appendixfile{Н}{FlowNetwork.h}{../lab5/include/FlowNetwork.h}
-% \appendixfile{О}{FlowNetwork.cpp}{../lab5/src/FlowNetwork.cpp}
-% \appendixfile{П}{FlowNetworkBuilder.h}{../lab5/include/FlowNetworkBuilder.h}
-% \appendixfile{Р}{FlowNetworkBuilder.cpp}{../lab5/src/FlowNetworkBuilder.cpp}
-% % \appendixfile{С}{FundamentalCuts.h}{../lab5/include/FundamentalCuts.h}
-% % \appendixfile{Т}{FundamentalCuts.cpp}{../lab5/src/FundamentalCuts.cpp}
-% \appendixfile{У}{FundamentalCycles.h}{../lab5/include/FundamentalCycles.h}
-% \appendixfile{Ф}{FundamentalCycles.cpp}{../lab5/src/FundamentalCycles.cpp}
-% \appendixfile{Х}{Generator.h}{../lab5/include/Generator.h}
-% \appendixfile{Ц}{Generator.cpp}{../lab5/src/Generator.cpp}
-% \appendixfile{Ч}{Graph.h}{../lab5/include/Graph.h}
-% \appendixfile{Ш}{Graph.cpp}{../lab5/src/Graph.cpp}
-% \appendixfile{Щ}{Kirchhoff.h}{../lab5/include/Kirchhoff.h}
-% \appendixfile{Ъ}{Kirchhoff.cpp}{../lab5/src/Kirchhoff.cpp}
-% \appendixfile{Ы}{Kruskal.h}{../lab5/include/Kruskal.h}
-% \appendixfile{Ь}{Kruskal.cpp}{../lab5/src/Kruskal.cpp}
-% \appendixfile{Э}{MaxFlowSolver.h}{../lab5/include/MaxFlowSolver.h}
-% \appendixfile{Ю}{MaxFlowSolver.cpp}{../lab5/src/MaxFlowSolver.cpp}
-% \appendixfile{Я}{MaxMatching.h}{../lab5/include/MaxMatching.h}
-% \appendixfile{АА}{MaxMatching.cpp}{../lab5/src/MaxMatching.cpp}
-% \appendixfile{АБ}{MermaidExporter.h}{../lab5/include/MermaidExporter.h}
-% \appendixfile{АВ}{MermaidExporter.cpp}{../lab5/src/MermaidExporter.cpp}
-% \appendixfile{АГ}{MinCostFlow.h}{../lab5/include/MinCostFlow.h}
-% \appendixfile{АД}{MinCostFlow.cpp}{../lab5/src/MinCostFlow.cpp}
-% \appendixfile{АЕ}{PathCounter.h}{../lab5/include/PathCounter.h}
-% \appendixfile{АЖ}{PathCounter.cpp}{../lab5/src/PathCounter.cpp}
-% \appendixfile{АЗ}{PruferCode.h}{../lab5/include/PruferCode.h}
-% \appendixfile{АИ}{PruferCode.cpp}{../lab5/src/PruferCode.cpp}
-% \appendixfile{АК}{ShimbellMethod.h}{../lab5/include/ShimbellMethod.h}
-% \appendixfile{АЛ}{ShimbellMethod.cpp}{../lab5/src/ShimbellMethod.cpp}
-% \appendixfile{АМ}{main.cpp}{../lab5/src/main.cpp}
+\appendixfile{А}{AlgorithmComparator.h}{../lab5/include/AlgorithmComparator.h}
+\appendixfile{Б}{AlgorithmComparator.cpp}{../lab5/src/AlgorithmComparator.cpp}
+\appendixfile{В}{BFS.h}{../lab5/include/BFS.h}
+\appendixfile{Г}{BFS.cpp}{../lab5/src/BFS.cpp}
+\appendixfile{Д}{Dijkstra.h}{../lab5/include/Dijkstra.h}
+\appendixfile{Е}{Dijkstra.cpp}{../lab5/src/Dijkstra.cpp}
+\appendixfile{Ж}{Eccentricity.h}{../lab5/include/Eccentricity.h}
+\appendixfile{З}{Eccentricity.cpp}{../lab5/src/Eccentricity.cpp}
+\appendixfile{И}{EdmondsMatching.h}{../lab5/include/EdmondsMatching.h}
+\appendixfile{К}{EdmondsMatching.cpp}{../lab5/src/EdmondsMatching.cpp}
+\appendixfile{Л}{EulerianCycle.h}{../lab5/include/EulerianCycle.h}
+\appendixfile{М}{EulerianCycle.cpp}{../lab5/src/EulerianCycle.cpp}
+\appendixfile{Н}{FlowNetwork.h}{../lab5/include/FlowNetwork.h}
+\appendixfile{О}{FlowNetwork.cpp}{../lab5/src/FlowNetwork.cpp}
+\appendixfile{П}{FlowNetworkBuilder.h}{../lab5/include/FlowNetworkBuilder.h}
+\appendixfile{Р}{FlowNetworkBuilder.cpp}{../lab5/src/FlowNetworkBuilder.cpp}
+% \appendixfile{С}{FundamentalCuts.h}{../lab5/include/FundamentalCuts.h}
+% \appendixfile{Т}{FundamentalCuts.cpp}{../lab5/src/FundamentalCuts.cpp}
+\appendixfile{У}{FundamentalCycles.h}{../lab5/include/FundamentalCycles.h}
+\appendixfile{Ф}{FundamentalCycles.cpp}{../lab5/src/FundamentalCycles.cpp}
+\appendixfile{Х}{Generator.h}{../lab5/include/Generator.h}
+\appendixfile{Ц}{Generator.cpp}{../lab5/src/Generator.cpp}
+\appendixfile{Ч}{Graph.h}{../lab5/include/Graph.h}
+\appendixfile{Ш}{Graph.cpp}{../lab5/src/Graph.cpp}
+\appendixfile{Щ}{Kirchhoff.h}{../lab5/include/Kirchhoff.h}
+\appendixfile{Ъ}{Kirchhoff.cpp}{../lab5/src/Kirchhoff.cpp}
+\appendixfile{Ы}{Kruskal.h}{../lab5/include/Kruskal.h}
+\appendixfile{Ь}{Kruskal.cpp}{../lab5/src/Kruskal.cpp}
+\appendixfile{Э}{MaxFlowSolver.h}{../lab5/include/MaxFlowSolver.h}
+\appendixfile{Ю}{MaxFlowSolver.cpp}{../lab5/src/MaxFlowSolver.cpp}
+\appendixfile{Я}{MaxMatching.h}{../lab5/include/MaxMatching.h}
+\appendixfile{АА}{MaxMatching.cpp}{../lab5/src/MaxMatching.cpp}
+\appendixfile{АБ}{MermaidExporter.h}{../lab5/include/MermaidExporter.h}
+\appendixfile{АВ}{MermaidExporter.cpp}{../lab5/src/MermaidExporter.cpp}
+\appendixfile{АГ}{MinCostFlow.h}{../lab5/include/MinCostFlow.h}
+\appendixfile{АД}{MinCostFlow.cpp}{../lab5/src/MinCostFlow.cpp}
+\appendixfile{АЕ}{PathCounter.h}{../lab5/include/PathCounter.h}
+\appendixfile{АЖ}{PathCounter.cpp}{../lab5/src/PathCounter.cpp}
+\appendixfile{АЗ}{PruferCode.h}{../lab5/include/PruferCode.h}
+\appendixfile{АИ}{PruferCode.cpp}{../lab5/src/PruferCode.cpp}
+\appendixfile{АК}{ShimbellMethod.h}{../lab5/include/ShimbellMethod.h}
+\appendixfile{АЛ}{ShimbellMethod.cpp}{../lab5/src/ShimbellMethod.cpp}
+\appendixfile{АМ}{main.cpp}{../lab5/src/main.cpp}
 
 \end{document}
